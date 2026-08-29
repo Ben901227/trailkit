@@ -7,6 +7,8 @@ import { clear, h } from './dom'
 
 export interface PanelHooks {
   zoomTo: (sel: Selection) => void
+  mergeTracks: () => void
+  exportDocs: () => void
   /** Current map view as [west, south, east, north], for snapping overlays. */
   viewportBounds: () => [number, number, number, number] | null
 }
@@ -104,6 +106,8 @@ export function renderLayerPanel(host: HTMLElement, state: AppState, hooks: Pane
     h(
       'div.panel-actions',
       {},
+      h('button', { onclick: hooks.mergeTracks }, '合併'),
+      h('button', { onclick: hooks.exportDocs }, '匯出'),
       h(
         'button.danger',
         {

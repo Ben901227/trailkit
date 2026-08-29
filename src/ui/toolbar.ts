@@ -36,8 +36,8 @@ export function renderToolbar(host: HTMLElement, state: AppState, hooks: Toolbar
     h('span.title', {}, 'GPX / KML'),
     h('button.primary', { onclick: () => input.click() }, '開啟檔案'),
     input,
-    h('button', { onclick: hooks.mergeTracks, title: '合併多條軌跡' }, '合併'),
-    h('button', { onclick: hooks.exportDocs, title: '匯出檔案' }, '匯出'),
+    h('button.desktop-only', { onclick: hooks.mergeTracks, title: '合併多條軌跡' }, '合併'),
+    h('button.desktop-only', { onclick: hooks.exportDocs, title: '匯出檔案' }, '匯出'),
     undoBtn,
     redoBtn,
     h(

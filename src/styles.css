@@ -152,8 +152,8 @@ dl.stats dd { margin: 0; }
 
   body.sheet-open .sheet-toggle { bottom: calc(62vh + 12px); }
 
-  /* The sheet already has a 圖層 tab; the toolbar is short on room. */
-  .layers-shortcut { display: none; }
+  /* The sheet already has these; the toolbar is short on room. */
+  .layers-shortcut, .desktop-only { display: none; }
 
   #toolbar .title { display: none; }
   #toolbar select { max-width: 42vw; }
@@ -262,4 +262,4 @@ button:disabled:hover { border-color: var(--line); }
 .merge-row button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .modal .hint { color: var(--muted); font-size: 12px; margin: 10px 0 0; }
 
-.panel-actions { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+.panel-actions { display: flex; justify-content: flex-end; gap: 6px; margin-bottom: 8px; }

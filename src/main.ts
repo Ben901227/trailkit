@@ -46,6 +46,8 @@ function positionsFor(state: AppState, sel: Selection) {
 }
 
 const hooks = {
+  mergeTracks: () => openMergeDialog(),
+  exportDocs: () => openExportDialog(),
   zoomTo(sel: Selection) {
     const box = bounds(positionsFor(getState(), sel))
     if (box && map) fitTo(map, box)
