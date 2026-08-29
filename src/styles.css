@@ -270,3 +270,15 @@ input[type="range"] {
   accent-color: var(--accent);
   touch-action: none;
 }
+
+.wpt-popup strong { display: block; margin-bottom: 4px; }
+.wpt-popup p { margin: 0; color: var(--muted); white-space: pre-wrap; }
+.maplibregl-popup-content { border-radius: 10px; padding: 10px 26px 10px 12px; }
+
+.section-label.group { display: flex; align-items: center; gap: 8px; padding: 8px 10px 4px; }
+.section-label.group input[type="checkbox"] { width: 16px; height: 16px; }
+.section-label.group .meta { margin-left: auto; }
+
+.toggle-row { display: flex; align-items: center; gap: 8px; min-height: 38px; cursor: pointer; }
+.toggle-row input { width: 18px; height: 18px; }
+.toggle-row input:disabled + span { color: var(--muted); }

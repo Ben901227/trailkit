@@ -10,6 +10,8 @@ export const SRC_CORNERS = 'corners'
 function baseStyle(basemap: Basemap): maplibregl.StyleSpecification {
   return {
     version: 8,
+    // Latin glyphs ship with the app; CJK is drawn locally (see createMap).
+    glyphs: './fonts/{fontstack}/{range}.pbf',
     sources: {
       [SRC_BASEMAP]: {
         type: 'raster',
@@ -56,6 +58,27 @@ function baseStyle(basemap: Basemap): maplibregl.StyleSpecification {
           'circle-color': '#ffffff',
           'circle-stroke-color': '#1f2933',
           'circle-stroke-width': 2,
+        },
+      },
+      {
+        id: 'waypoint-label',
+        type: 'symbol',
+        source: SRC_WAYPOINTS,
+        layout: {
+          'text-field': ['get', 'name'],
+          'text-font': ['Noto Sans Regular'],
+          'text-size': 12,
+          'text-anchor': 'left',
+          'text-offset': [0.8, 0],
+          'text-max-width': 12,
+          // Drop a label rather than a marker when they collide.
+          'text-optional': true,
+          'text-padding': 4,
+        },
+        paint: {
+          'text-color': '#1f2933',
+          'text-halo-color': '#ffffff',
+          'text-halo-width': 1.5,
         },
       },
       {
@@ -131,6 +154,20 @@ function baseStyle(basemap: Basemap): maplibregl.StyleSpecification {
   } as maplibregl.StyleSpecification
 }
 
+/**
+ * Glyph ranges shipped with the app. MapLibre asks for whichever range each
+ * character falls in, and a range we do not have must resolve to a valid empty
+ * glyph file: a 404 (or worse, a dev server's HTML fallback) makes the symbol
+ * layout throw, which takes down every layer sharing that source.
+ */
+const BUNDLED_GLYPH_RANGES = new Set(['0-255', '256-511', '8192-8447', '65280-65535'])
+
+function glyphFallback(url: string): string {
+  const range = url.match(/\/([0-9]+-[0-9]+)\.pbf(?:\?|$)/)?.[1]
+  if (range && BUNDLED_GLYPH_RANGES.has(range)) return url
+  return url.replace(/\/[^/]+\.pbf/, '/empty.pbf')
+}
+
 export function createMap(container: HTMLElement, basemapId: string): MLMap {
   const map = new maplibregl.Map({
     container,
@@ -142,6 +179,11 @@ export function createMap(container: HTMLElement, basemapId: string): MLMap {
     maxPitch: 85,
     // Keep pinch-rotate; it is the gesture that makes the 3D view usable later.
     pitchWithRotate: true,
+    // Waypoint names are mostly Chinese; the browser draws those, so only the
+    // Latin ranges have to be shipped as glyph files.
+    localIdeographFontFamily: "'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif",
+    transformRequest: (url, resourceType) =>
+      resourceType === 'Glyphs' ? { url: glyphFallback(url) } : { url },
   })
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right')
   map.addControl(
@@ -197,3 +239,12 @@ export function setTerrain(map: MLMap, on: boolean): void {
   map.setTerrain(on ? { source: SRC_TERRAIN, exaggeration: 1.3 } : null)
   map.easeTo({ pitch: on ? 62 : 0, duration: 600 })
 }
+
+
+/** Layers that make up the waypoint display, for the global on/off switch. */
+export const WAYPOINT_LAYERS = [
+  'waypoint-circle',
+  'waypoint-label',
+  'waypoint-selected',
+  'waypoint-hit',
+]

@@ -31,7 +31,7 @@ const doc: Doc = {
   ],
 }
 
-const state: AppState = { docs: [doc], selection: null, basemapId: 'osm', customBasemapUrl: null, layers: [], editing: false, terrain: false, vertex: null }
+const state: AppState = { docs: [doc], selection: null, basemapId: 'osm', customBasemapUrl: null, layers: [], editing: false, terrain: false, showWaypoints: true, showWaypointLabels: true, vertex: null }
 
 async function textOf(scope: 'all' | 'visible' | 'selection', format: 'gpx' | 'geojson' = 'gpx') {
   const result = await buildExport(state, { format, scope, filename: 'out' })
@@ -66,7 +66,7 @@ describe('buildExport', () => {
   })
 
   it('refuses to build an empty export', async () => {
-    const empty: AppState = { docs: [], selection: null, basemapId: 'osm', customBasemapUrl: null, layers: [], editing: false, terrain: false, vertex: null }
+    const empty: AppState = { docs: [], selection: null, basemapId: 'osm', customBasemapUrl: null, layers: [], editing: false, terrain: false, showWaypoints: true, showWaypointLabels: true, vertex: null }
     await expect(buildExport(empty, { format: 'gpx', scope: 'all', filename: 'x' })).rejects.toThrow()
   })
 

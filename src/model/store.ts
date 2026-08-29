@@ -10,6 +10,8 @@ const initial: AppState = {
   customBasemapUrl: null,
   editing: false,
   terrain: false,
+  showWaypoints: true,
+  showWaypointLabels: true,
   vertex: null,
 }
 
@@ -73,6 +75,42 @@ export function setVertex(vertex: number | null): void {
 /** Replace the documents wholesale; the editing commands return new arrays. */
 export function setDocs(docs: AppState['docs']): void {
   update((s) => ({ ...s, docs }))
+}
+
+export function setShowWaypoints(showWaypoints: boolean): void {
+  update((s) => ({ ...s, showWaypoints }))
+}
+
+export function setShowWaypointLabels(showWaypointLabels: boolean): void {
+  update((s) => ({ ...s, showWaypointLabels }))
+}
+
+/** Show or hide every waypoint in one document at once. */
+export function setDocWaypointsVisible(docId: string, visible: boolean): void {
+  update((s) => ({
+    ...s,
+    docs: s.docs.map((d) =>
+      d.id === docId ? { ...d, waypoints: d.waypoints.map((w) => ({ ...w, visible })) } : d,
+    ),
+  }))
+}
+
+export function setDocTracksVisible(docId: string, visible: boolean): void {
+  update((s) => ({
+    ...s,
+    docs: s.docs.map((d) =>
+      d.id === docId ? { ...d, tracks: d.tracks.map((t) => ({ ...t, visible })) } : d,
+    ),
+  }))
+}
+
+export function setDocOverlaysVisible(docId: string, visible: boolean): void {
+  update((s) => ({
+    ...s,
+    docs: s.docs.map((d) =>
+      d.id === docId ? { ...d, overlays: d.overlays.map((o) => ({ ...o, visible })) } : d,
+    ),
+  }))
 }
 
 export function setBasemap(basemapId: string): void {

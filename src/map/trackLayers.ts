@@ -2,7 +2,7 @@ import type { Feature, FeatureCollection, Position } from 'geojson'
 import type { Map as MLMap, GeoJSONSource } from 'maplibre-gl'
 import type { AppState } from '../model/types'
 import { selectionKey } from '../model/types'
-import { SRC_CORNERS, SRC_TRACKS, SRC_VERTICES, SRC_WAYPOINTS } from './mapView'
+import { SRC_CORNERS, SRC_TRACKS, SRC_VERTICES, SRC_WAYPOINTS, WAYPOINT_LAYERS } from './mapView'
 
 export function featureKey(kind: string, docId: string, id: string): string {
   return `${kind}:${docId}:${id}`
@@ -56,6 +56,11 @@ export function syncTrackLayers(map: MLMap, state: AppState): void {
   const key = state.selection ? selectionKey(state.selection) : ''
   map.setFilter('track-selected', ['==', ['get', 'key'], key])
   map.setFilter('waypoint-selected', ['==', ['get', 'key'], key])
+
+  for (const layer of WAYPOINT_LAYERS) {
+    const on = state.showWaypoints && (layer !== 'waypoint-label' || state.showWaypointLabels)
+    map.setLayoutProperty(layer, 'visibility', on ? 'visible' : 'none')
+  }
 }
 
 /** All positions of the visible content, for fit-to-view. */
@@ -63,7 +68,9 @@ export function visiblePositions(state: AppState): Position[] {
   const out: Position[] = []
   for (const doc of state.docs) {
     for (const t of doc.tracks) if (t.visible) out.push(...t.geometry.coordinates)
-    for (const w of doc.waypoints) if (w.visible) out.push(w.geometry.coordinates)
+    if (state.showWaypoints) {
+      for (const w of doc.waypoints) if (w.visible) out.push(w.geometry.coordinates)
+    }
     for (const o of doc.overlays) if (o.visible) out.push(...o.corners)
   }
   return out

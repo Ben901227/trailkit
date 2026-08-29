@@ -2,6 +2,8 @@ import { BASEMAPS } from '../map/basemaps'
 import { DEFAULT_LAYER_OPACITY, TILE_CATALOG, layerFromCatalog } from '../map/tileCatalog'
 import {
   addLayers,
+  setShowWaypointLabels,
+  setShowWaypoints,
   moveLayer,
   patchLayer,
   removeLayer,
@@ -110,9 +112,30 @@ function catalogPicker(state: AppState): HTMLElement {
   return box
 }
 
+function toggleRow(label: string, checked: boolean, onChange: (on: boolean) => void, disabled = false): HTMLElement {
+  const check = h('input', { type: 'checkbox' }) as HTMLInputElement
+  check.checked = checked
+  check.disabled = disabled
+  check.addEventListener('change', () => onChange(check.checked))
+  const row = h('label.toggle-row', {}, check, h('span', {}, label))
+  return row
+}
+
+function waypointSettings(state: AppState): HTMLElement {
+  const box = h('div.layer-section')
+  const total = state.docs.reduce((n, d) => n + d.waypoints.length, 0)
+  box.append(
+    h('div.section-label', {}, `航點 (${total})`),
+    toggleRow('在地圖上顯示航點', state.showWaypoints, setShowWaypoints),
+    toggleRow('顯示航點名稱', state.showWaypointLabels, setShowWaypointLabels, !state.showWaypoints),
+  )
+  if (!total) box.append(h('p.hint', {}, '目前開啟的檔案沒有航點。'))
+  return box
+}
+
 export function renderLayersPanel(host: HTMLElement, state: AppState): void {
   clear(host)
-  host.append(basemapPicker(state))
+  host.append(basemapPicker(state), waypointSettings(state))
 
   const stack = h('div.layer-section')
   stack.append(h('div.section-label', {}, `疊加圖層 (${state.layers.length})`))

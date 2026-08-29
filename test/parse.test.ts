@@ -90,3 +90,25 @@ describe('kmlToDoc', () => {
     expect(skipped[0]).toContain('疊圖 C')
   })
 })
+
+describe('waypoint naming', () => {
+  const gpx = (inner: string) =>
+    parse(
+      `<?xml version="1.0"?><gpx version="1.1" creator="t" xmlns="http://www.topografix.com/GPX/1/1">${inner}</gpx>`,
+    )
+
+  it('prefers <name>', () => {
+    const { doc } = gpxToDoc(gpx('<wpt lat="24" lon="121"><name>桃山</name><type>方位點</type></wpt>'), 'x')
+    expect(doc.waypoints[0]!.name).toBe('桃山')
+  })
+
+  it('falls back to <type> when the waypoint has no name', () => {
+    const { doc } = gpxToDoc(gpx('<wpt lat="24" lon="121"><type>起點</type><sym>Waypoint</sym></wpt>'), 'x')
+    expect(doc.waypoints[0]!.name).toBe('起點')
+  })
+
+  it('does not fall back to <sym>, which is the icon and the same for every point', () => {
+    const { doc } = gpxToDoc(gpx('<wpt lat="24" lon="121"><sym>Waypoint</sym></wpt>'), 'x')
+    expect(doc.waypoints[0]!.name).toBe('航點 1')
+  })
+})

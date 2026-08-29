@@ -32,6 +32,20 @@ function nameOf(f: Feature<Geometry | null>, fallback: string): string {
 /** Properties we already model explicitly and should not duplicate into `extra`. */
 const HANDLED = new Set(['name', 'desc', 'description', 'coordinateProperties'])
 
+/**
+ * A waypoint without <name> often still says what it is in <type> (起點,
+ * 方位點). That beats a bare ordinal. <sym> is skipped: it is the icon name,
+ * and is "Waypoint" on every point in a typical export.
+ */
+function waypointName(f: Feature<Geometry | null>, fallback: string): string {
+  const p = f.properties as Record<string, unknown> | null
+  for (const key of ['name', 'type']) {
+    const value = p?.[key]
+    if (typeof value === 'string' && value.trim()) return value.trim()
+  }
+  return fallback
+}
+
 function extraOf(f: Feature<Geometry | null>): Record<string, unknown> | undefined {
   const p = f.properties as Record<string, unknown> | null
   if (!p) return undefined
@@ -78,7 +92,7 @@ export function normalize(fc: FeatureCollection<Geometry | null>): Normalized {
       const desc = p?.['desc'] ?? p?.['description']
       waypoints.push({
         id: newId('wpt'),
-        name: nameOf(f, `Waypoint ${waypoints.length + 1}`),
+        name: waypointName(f, `航點 ${waypoints.length + 1}`),
         description: typeof desc === 'string' ? desc : undefined,
         visible: true,
         geometry: g as Point,

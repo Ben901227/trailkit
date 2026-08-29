@@ -7,6 +7,8 @@ interface Saved {
   basemapId: string
   customBasemapUrl: string | null
   layers: TileLayer[]
+  showWaypoints?: boolean
+  showWaypointLabels?: boolean
 }
 
 /**
@@ -19,6 +21,8 @@ export function saveLayerPreferences(state: AppState): void {
     basemapId: state.basemapId,
     customBasemapUrl: state.customBasemapUrl,
     layers: state.layers,
+    showWaypoints: state.showWaypoints,
+    showWaypointLabels: state.showWaypointLabels,
   }
   try {
     localStorage.setItem(KEY, JSON.stringify(payload))
@@ -46,5 +50,7 @@ export function loadLayerPreferences(): void {
     basemapId: typeof saved.basemapId === 'string' ? saved.basemapId : s.basemapId,
     customBasemapUrl: saved.customBasemapUrl ?? null,
     layers,
+    showWaypoints: saved.showWaypoints ?? s.showWaypoints,
+    showWaypointLabels: saved.showWaypointLabels ?? s.showWaypointLabels,
   }))
 }

@@ -7,6 +7,7 @@ import { docFromOverlays, isImageFile, overlayFromImage } from './io/imageOverla
 import { loadFiles } from './io/loadFile'
 import { applyBasemap, createMap, fitTo, setTerrain } from './map/mapView'
 import { syncOverlayLayers } from './map/overlayLayers'
+import { closeWaypointPopup, showWaypointPopup } from './map/waypointPopup'
 import { syncTileLayers } from './map/tileLayers'
 import { syncCornerLayer, syncTrackLayers, syncVertexLayer, visiblePositions } from './map/trackLayers'
 import { bounds } from './model/stats'
@@ -154,6 +155,8 @@ function render(state: AppState): void {
     terrainOn = state.terrain
     setTerrain(map, state.terrain)
   }
+  // A popup left open over hidden waypoints is just a stray label.
+  if (!state.showWaypoints) closeWaypointPopup()
   syncTrackLayers(map, state)
   syncVertexLayer(map, state)
   syncCornerLayer(map, state)
@@ -161,7 +164,7 @@ function render(state: AppState): void {
   syncOverlayLayers(map, state)
 }
 
-function selectFromMap(features: maplibregl.MapGeoJSONFeature[]): void {
+function selectFromMap(features: maplibregl.MapGeoJSONFeature[], at?: maplibregl.LngLatLike): void {
   const key = features[0]?.properties?.['key']
   if (typeof key !== 'string') return
   const [kind, docId, id] = key.split(':')
@@ -169,6 +172,9 @@ function selectFromMap(features: maplibregl.MapGeoJSONFeature[]): void {
   setSelection({ kind, docId, id } as Selection)
   setTab('info')
   renderPanel(panelEl, getState(), hooks)
+
+  if (kind === 'waypoint' && at && map) showWaypointPopup(map, getState(), key, at)
+  else closeWaypointPopup()
 }
 
 async function restoreSession(): Promise<void> {
@@ -205,21 +211,34 @@ function start(): void {
   // changes the viewport; keep the canvas matched to its container.
   new ResizeObserver(() => map?.resize()).observe(mapEl)
 
+  /**
+   * Waypoints win over tracks. queryRenderedFeatures orders by draw order, not
+   * by the layers you ask for, so a waypoint sitting on its own track would
+   * otherwise be unselectable — and it is much the smaller target.
+   */
+  const hitTest = (point: maplibregl.Point) => {
+    const waypoints = map!.queryRenderedFeatures(point, { layers: ['waypoint-hit'] })
+    return waypoints.length ? waypoints : map!.queryRenderedFeatures(point, { layers: ['track-hit'] })
+  }
+
   map.on('click', (e) => {
     const state = getState()
-    const hits = map!.queryRenderedFeatures(e.point, { layers: ['waypoint-hit', 'track-hit'] })
+    const hits = hitTest(e.point)
 
     if (state.editing) {
       // In editing mode the vertex tool owns taps on the current track; only
       // a tap on a *different* feature should change the selection.
       const current = state.selection ? selectionKey(state.selection) : ''
       const other = hits.find((f) => f.properties?.['key'] !== current)
-      if (other) selectFromMap([other])
+      if (other) selectFromMap([other], e.lngLat)
       return
     }
 
-    if (hits.length) selectFromMap(hits)
-    else setSelection(null)
+    if (hits.length) selectFromMap(hits, e.lngLat)
+    else {
+      setSelection(null)
+      closeWaypointPopup()
+    }
   })
   for (const layer of ['waypoint-hit', 'track-hit']) {
     map.on('mouseenter', layer, () => (map!.getCanvas().style.cursor = 'pointer'))

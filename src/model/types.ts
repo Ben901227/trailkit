@@ -95,6 +95,11 @@ export interface AppState {
   editing: boolean
   /** 3D terrain view. Editing is disabled while it is on. */
   terrain: boolean
+  /** Global waypoint switch. Separate from each waypoint's own `visible`, so
+   * flipping it off and on again does not forget what was hidden by hand. */
+  showWaypoints: boolean
+  /** Draw waypoint names next to their markers. */
+  showWaypointLabels: boolean
   /** Index of the point being worked on inside the selected track. */
   vertex: number | null
 }

@@ -1,5 +1,13 @@
 import { checkpoint, checkpointCoalesced } from '../model/history'
-import { removeDoc, setSelection, setTrackColor, setVisible } from '../model/store'
+import {
+  removeDoc,
+  setDocOverlaysVisible,
+  setDocTracksVisible,
+  setDocWaypointsVisible,
+  setSelection,
+  setTrackColor,
+  setVisible,
+} from '../model/store'
 import { formatDistance, trackStats } from '../model/stats'
 import type { AppState, Selection } from '../model/types'
 import { selectionKey } from '../model/types'
@@ -37,6 +45,31 @@ function toggleDoc(docId: string, itemCount: number): void {
     collapsed.delete(docId)
     expanded.add(docId)
   }
+}
+
+/**
+ * Section header with a checkbox covering the whole group — a single GPX can
+ * hold hundreds of waypoints, and ticking them one at a time is not an option.
+ */
+function sectionHeader(
+  label: string,
+  items: { visible: boolean }[],
+  setAll: (visible: boolean) => void,
+): HTMLElement {
+  const shown = items.filter((i) => i.visible).length
+  const check = h('input', { type: 'checkbox' }) as HTMLInputElement
+  check.checked = shown > 0
+  check.indeterminate = shown > 0 && shown < items.length
+  check.title = shown === items.length ? '全部隱藏' : '全部顯示'
+  check.addEventListener('change', () => setAll(check.checked))
+
+  return h(
+    'div.section-label.group',
+    {},
+    check,
+    h('span', {}, `${label} (${items.length})`),
+    shown < items.length ? h('span.meta', {}, `顯示 ${shown}`) : null,
+  )
 }
 
 function itemRow(
@@ -159,7 +192,11 @@ export function renderLayerPanel(host: HTMLElement, state: AppState, hooks: Pane
       continue
     }
 
-    if (doc.tracks.length) card.append(h('div.section-label', {}, `軌跡 (${doc.tracks.length})`))
+    if (doc.tracks.length) {
+      card.append(
+        sectionHeader('軌跡', doc.tracks, (visible) => setDocTracksVisible(doc.id, visible)),
+      )
+    }
     for (const track of doc.tracks) {
       const stats = trackStats(track)
       card.append(
@@ -175,7 +212,11 @@ export function renderLayerPanel(host: HTMLElement, state: AppState, hooks: Pane
       )
     }
 
-    if (doc.waypoints.length) card.append(h('div.section-label', {}, `點位 (${doc.waypoints.length})`))
+    if (doc.waypoints.length) {
+      card.append(
+        sectionHeader('航點', doc.waypoints, (visible) => setDocWaypointsVisible(doc.id, visible)),
+      )
+    }
     for (const wpt of doc.waypoints) {
       card.append(
         itemRow(
@@ -189,7 +230,11 @@ export function renderLayerPanel(host: HTMLElement, state: AppState, hooks: Pane
       )
     }
 
-    if (doc.overlays.length) card.append(h('div.section-label', {}, `疊圖 (${doc.overlays.length})`))
+    if (doc.overlays.length) {
+      card.append(
+        sectionHeader('疊圖', doc.overlays, (visible) => setDocOverlaysVisible(doc.id, visible)),
+      )
+    }
     for (const overlay of doc.overlays) {
       card.append(
         itemRow(
