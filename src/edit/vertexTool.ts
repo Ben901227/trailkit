@@ -5,6 +5,7 @@ import { checkpoint, checkpointCoalesced } from '../model/history'
 import { nearestOnLine } from '../model/geometry'
 import { getState, setDocs, setSelection, setVertex } from '../model/store'
 import { selectionKey, type AppState, type Selection } from '../model/types'
+import { lockPanel, unlockPanel } from '../ui/panelLock'
 
 type PointerEventLike = MapMouseEvent | MapTouchEvent
 
@@ -69,6 +70,9 @@ export function installVertexTool(map: MLMap): void {
 
     e.preventDefault()
     map.dragPan.disable()
+    // The file list can hold hundreds of rows; rebuilding it per frame is
+    // wasted work when nothing in it is changing except one distance.
+    lockPanel()
     drag = {
       kind: 'vertex',
       ref: index,
@@ -93,6 +97,7 @@ export function installVertexTool(map: MLMap): void {
 
     e.preventDefault()
     map.dragPan.disable()
+    lockPanel()
     drag = {
       kind: 'waypoint',
       ref: id,
@@ -119,6 +124,7 @@ export function installVertexTool(map: MLMap): void {
 
     e.preventDefault()
     map.dragPan.disable()
+    lockPanel()
     drag = {
       kind: onCorner ? 'corner' : 'overlay',
       ref: onCorner ? (index as number) : sel.id,
@@ -165,6 +171,7 @@ export function installVertexTool(map: MLMap): void {
     }
     map.dragPan.enable()
     drag = null
+    unlockPanel()
   }
 
   map.on('mousedown', beginVertexDrag)

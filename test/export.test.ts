@@ -75,3 +75,35 @@ describe('buildExport', () => {
     expect(result.filename).toBe('route.geojson')
   })
 })
+
+describe('export scope "selection"', () => {
+  it('exports just the selected waypoint', async () => {
+    const withWaypoint: AppState = {
+      ...state,
+      docs: [
+        {
+          ...doc,
+          waypoints: [
+            {
+              id: 'w1',
+              name: '桃山',
+              visible: true,
+              geometry: { type: 'Point', coordinates: [121, 24] },
+            },
+          ],
+        },
+      ],
+      selection: { kind: 'waypoint', docId: 'd1', id: 'w1' },
+    }
+    const result = await buildExport(withWaypoint, { format: 'gpx', scope: 'selection', filename: 'x' })
+    const text = await result.blob.text()
+    expect(text).toContain('桃山')
+    expect(text).not.toContain('<name>t1</name>')
+  })
+
+  it('says what to select rather than failing blankly', async () => {
+    await expect(
+      buildExport(state, { format: 'gpx', scope: 'selection', filename: 'x' }),
+    ).rejects.toThrow('尚未選取任何項目')
+  })
+})

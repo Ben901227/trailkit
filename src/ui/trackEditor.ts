@@ -9,6 +9,7 @@ import {
   trimTrack,
   updateWaypoint,
 } from '../model/commands'
+import { hiddenVertexCount } from '../map/trackLayers'
 import { checkpoint } from '../model/history'
 import { patchOverlay } from '../model/commands'
 import { getState, setDocs, setEditing, setSelection, setVertex } from '../model/store'
@@ -72,6 +73,19 @@ export function trackActions(state: AppState, sel: Selection & { kind: 'track' }
       '刪除軌跡',
     ),
   )
+
+  const hidden = hiddenVertexCount()
+  if (hidden) {
+    box.append(
+      h(
+        'p.hint',
+        {},
+        `這條軌跡有 ${hidden.toLocaleString()} 個點，目前畫面內太密而未顯示節點。` +
+          '放大到看得清單點的程度就會出現。',
+      ),
+    )
+    return box
+  }
 
   if (vertex === null) {
     box.append(h('p.hint', {}, '點一下軌跡上的圓點，即可刪除該點、從該點分割或剪裁。'))

@@ -11,8 +11,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg'],
       manifest: {
-        name: 'GPX / KML 編輯器',
-        short_name: 'GPX 編輯',
+        name: 'trailkit',
+        short_name: 'trailkit',
         description: '檢視、編輯、合併 GPX / KML 軌跡並疊加圖層',
         lang: 'zh-Hant',
         start_url: './',

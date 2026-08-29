@@ -130,6 +130,47 @@ async function openFiles(all: File[]): Promise<void> {
   toast(`已開啟 ${docs.length} 個檔案`)
 }
 
+/**
+ * Pointer moves arrive faster than the screen refreshes, and each map sync
+ * re-uploads whole track geometries. Collapse them to one per frame: the user
+ * cannot see the intermediate states anyway.
+ */
+let queuedState: AppState | null = null
+let queuedFrame = 0
+
+function scheduleMapSync(state: AppState): void {
+  queuedState = state
+  if (queuedFrame) return
+  queuedFrame = requestAnimationFrame(() => {
+    queuedFrame = 0
+    const next = queuedState
+    queuedState = null
+    if (next) syncMap(next)
+  })
+}
+
+function syncMap(state: AppState): void {
+  if (!map || !styleReady) return
+
+  const basemapKey = `${state.basemapId}|${state.customBasemapUrl ?? ''}`
+  if (basemapKey !== lastBasemapId) {
+    lastBasemapId = basemapKey
+    applyBasemap(map, state.basemapId, state.customBasemapUrl)
+  }
+  if (state.terrain !== terrainOn) {
+    terrainOn = state.terrain
+    setTerrain(map, state.terrain)
+  }
+  // A popup left open over hidden waypoints is just a stray label.
+  if (!state.showWaypoints) closeWaypointPopup()
+
+  syncTrackLayers(map, state)
+  syncVertexLayer(map, state)
+  syncCornerLayer(map, state)
+  syncTileLayers(map, state)
+  syncOverlayLayers(map, state)
+}
+
 function render(state: AppState): void {
   renderToolbar(toolbarEl, state, {
     openFiles: (files) => void openFiles(files),
@@ -144,24 +185,7 @@ function render(state: AppState): void {
     },
   })
   renderPanel(panelEl, state, hooks)
-
-  if (!map || !styleReady) return
-  const basemapKey = `${state.basemapId}|${state.customBasemapUrl ?? ''}`
-  if (basemapKey !== lastBasemapId) {
-    lastBasemapId = basemapKey
-    applyBasemap(map, state.basemapId, state.customBasemapUrl)
-  }
-  if (state.terrain !== terrainOn) {
-    terrainOn = state.terrain
-    setTerrain(map, state.terrain)
-  }
-  // A popup left open over hidden waypoints is just a stray label.
-  if (!state.showWaypoints) closeWaypointPopup()
-  syncTrackLayers(map, state)
-  syncVertexLayer(map, state)
-  syncCornerLayer(map, state)
-  syncTileLayers(map, state)
-  syncOverlayLayers(map, state)
+  scheduleMapSync(state)
 }
 
 function selectFromMap(features: maplibregl.MapGeoJSONFeature[], at?: maplibregl.LngLatLike): void {
@@ -210,6 +234,12 @@ function start(): void {
   // The map is created before the grid has laid out, and the mobile sheet
   // changes the viewport; keep the canvas matched to its container.
   new ResizeObserver(() => map?.resize()).observe(mapEl)
+
+  // Which editing handles are drawn depends on what is on screen, and panning
+  // is not a state change — so recompute them when the camera settles.
+  map.on('moveend', () => {
+    if (map && styleReady) syncVertexLayer(map, getState())
+  })
 
   /**
    * Waypoints win over tracks. queryRenderedFeatures orders by draw order, not

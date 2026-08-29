@@ -58,7 +58,13 @@ export async function buildExport(state: AppState, req: ExportRequest): Promise<
   const docs = pick(state, req.scope)
   // Layers are shared across files, so scope narrows them by visibility only.
   const layers = req.scope === 'all' ? state.layers : state.layers.filter((l) => l.visible)
-  if (!docs.length) throw new Error('沒有可匯出的內容')
+  if (!docs.length) {
+    throw new Error(
+      req.scope === 'selection'
+        ? '尚未選取任何項目：先在地圖或檔案清單點一條軌跡、點位或疊圖'
+        : '沒有可匯出的內容',
+    )
+  }
 
   const warnings: string[] = []
   if (layers.length && req.format !== 'kml' && req.format !== 'kmz') {

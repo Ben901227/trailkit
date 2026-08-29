@@ -1,6 +1,7 @@
 import { buildExport, type ExportFormat, type ExportScope } from '../io/exportDocs'
 import { saveFile } from '../io/download'
 import { getState } from '../model/store'
+import { findOverlay, findTrack, findWaypoint, type AppState } from '../model/types'
 import { h } from './dom'
 import { toast } from './toasts'
 
@@ -16,6 +17,15 @@ const SCOPES: { id: ExportScope; label: string }[] = [
   { id: 'visible', label: '僅顯示中' },
   { id: 'selection', label: '僅選取項目' },
 ]
+
+/** What "僅選取項目" would actually export right now, if anything. */
+function selectionName(state: AppState): string | null {
+  const sel = state.selection
+  if (!sel) return null
+  if (sel.kind === 'track') return findTrack(state, sel.docId, sel.id)?.name ?? null
+  if (sel.kind === 'waypoint') return findWaypoint(state, sel.docId, sel.id)?.name ?? null
+  return findOverlay(state, sel.docId, sel.id)?.name ?? null
+}
 
 export function openExportDialog(): void {
   const state = getState()
@@ -45,8 +55,20 @@ export function openExportDialog(): void {
     return btn
   })
 
+  const selected = selectionName(state)
   const scope = h('div.chips')
   let chosenScope: ExportScope = 'all'
+  const scopeNote = h('p.hint')
+
+  const describeScope = () => {
+    scopeNote.textContent =
+      chosenScope === 'selection'
+        ? selected
+          ? `將只匯出「${selected}」`
+          : ''
+        : ''
+  }
+
   const scopeButtons = SCOPES.map((s) => {
     const btn = h('button', {
       'aria-pressed': String(s.id === chosenScope),
@@ -55,9 +77,15 @@ export function openExportDialog(): void {
         scopeButtons.forEach((b, i) =>
           b.setAttribute('aria-pressed', String(SCOPES[i]!.id === chosenScope)),
         )
+        describeScope()
       },
-    })
+    }) as HTMLButtonElement
     btn.textContent = s.label
+    // Offering a scope that cannot produce a file is a dead end.
+    if (s.id === 'selection' && !selected) {
+      btn.disabled = true
+      btn.title = '先在地圖或檔案清單點一條軌跡、點位或疊圖'
+    }
     scope.append(btn)
     return btn
   })
@@ -91,6 +119,7 @@ export function openExportDialog(): void {
     format,
     h('label', {}, '範圍'),
     scope,
+    scopeNote,
     h('label', {}, '檔名'),
     nameInput,
     h(

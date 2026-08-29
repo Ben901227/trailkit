@@ -36,10 +36,16 @@ export function openMergeDialog(): void {
   const backdrop = h('div.modal-backdrop')
   const box = h('div.modal')
   const list = h('div.merge-list')
+  const selectAll = h('div.merge-toolbar')
   const summary = h('p.hint')
   const nameInput = h('input.text', { type: 'text', value: '合併結果' }) as HTMLInputElement
 
   const chosen = () => rows.filter((r) => r.chosen)
+
+  function setAll(value: boolean): void {
+    for (const row of rows) row.chosen = value
+    render()
+  }
 
   function move(index: number, direction: -1 | 1): void {
     const target = index + direction
@@ -117,8 +123,15 @@ export function openMergeDialog(): void {
     close()
   }
 
+  selectAll.append(
+    h('span.meta', {}, `共 ${rows.length} 條軌跡`),
+    h('button', { onclick: () => setAll(true) }, '全選'),
+    h('button', { onclick: () => setAll(false) }, '全不選'),
+  )
+
   box.append(
     h('h3', {}, '合併軌跡'),
+    selectAll,
     list,
     summary,
     h('label', {}, '新檔案名稱'),

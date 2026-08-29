@@ -33,7 +33,7 @@ export function renderToolbar(host: HTMLElement, state: AppState, hooks: Toolbar
   ;(redoBtn as HTMLButtonElement).disabled = !canRedo()
 
   host.append(
-    h('span.title', {}, 'GPX / KML'),
+    h('span.title', {}, 'trailkit'),
     h('button.primary', { onclick: () => input.click() }, '開啟檔案'),
     input,
     h('button.desktop-only', { onclick: hooks.mergeTracks, title: '合併多條軌跡' }, '合併'),

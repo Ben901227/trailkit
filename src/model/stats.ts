@@ -28,7 +28,22 @@ export interface TrackStats {
 /** Ignore elevation wobble below this many metres, or noise inflates the ascent. */
 const ELEVATION_NOISE_M = 3
 
+/**
+ * Stats walk every point, and the panel asks for them on every render — which
+ * during a drag is every frame. Tracks are immutable, so the answer for a given
+ * one never changes; cache it against the object itself.
+ */
+const cache = new WeakMap<Track, TrackStats>()
+
 export function trackStats(track: Track): TrackStats {
+  const hit = cache.get(track)
+  if (hit) return hit
+  const result = computeTrackStats(track)
+  cache.set(track, result)
+  return result
+}
+
+function computeTrackStats(track: Track): TrackStats {
   const coords = track.geometry.coordinates
   let distance = 0
   for (let i = 1; i < coords.length; i++) {
