@@ -63,7 +63,6 @@ function surviving(docs: Doc[], selection: Selection | null): Selection | null {
     track: doc.tracks,
     waypoint: doc.waypoints,
     overlay: doc.overlays,
-    tile: doc.tiles,
   } as const
   return lists[selection.kind].some((item) => item.id === selection.id) ? selection : null
 }

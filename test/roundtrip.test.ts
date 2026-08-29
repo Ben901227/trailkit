@@ -87,13 +87,14 @@ describe('tile layer round-trip', () => {
 </kml>`
 
   it('decodes a percent-encoded, double-braced XYZ template', () => {
-    const { doc } = kmlToDoc(parse(source), 'tiles.kml')
-    expect(doc.tiles).toHaveLength(1)
-    expect(doc.tiles[0]!.url).toBe('https://tile.example.tw/map/rudy/{z}/{x}/{y}.png')
-    expect(doc.tiles[0]!.minzoom).toBe(5)
-    expect(doc.tiles[0]!.maxzoom).toBe(17)
-    expect(doc.tiles[0]!.bounds).toEqual([119.2, 21.8, 122.1, 25.7])
-    expect(doc.tiles[0]!.opacity).toBeCloseTo(0x80 / 255, 3)
+    const { tiles } = kmlToDoc(parse(source), 'tiles.kml')
+    expect(tiles).toHaveLength(1)
+    expect(tiles[0]!.url).toBe('https://tile.example.tw/map/rudy/{z}/{x}/{y}.png')
+    expect(tiles[0]!.minzoom).toBe(5)
+    expect(tiles[0]!.maxzoom).toBe(17)
+    expect(tiles[0]!.bounds).toEqual([119.2, 21.8, 122.1, 25.7])
+    expect(tiles[0]!.opacity).toBeCloseTo(0x80 / 255, 3)
+    expect(tiles[0]!.origin).toBe('tiles.kml')
   })
 
   it('does not also report the pyramid as an image overlay', () => {
@@ -103,8 +104,8 @@ describe('tile layer round-trip', () => {
   })
 
   it('writes the layer back in a form it can read again', () => {
-    const first = kmlToDoc(parse(source), 'tiles.kml').doc
-    const again = kmlToDoc(parse(writeKml([first], 'tiles')), 'tiles.kml').doc
+    const first = kmlToDoc(parse(source), 'tiles.kml')
+    const again = kmlToDoc(parse(writeKml([first.doc], 'tiles', [], first.tiles)), 'tiles.kml')
     expect(again.tiles[0]!.url).toBe(first.tiles[0]!.url)
     expect(again.tiles[0]!.minzoom).toBe(5)
     expect(again.tiles[0]!.maxzoom).toBe(17)

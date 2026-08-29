@@ -1,5 +1,6 @@
 import { kml } from '@tmcw/togeojson'
 import type { Overlay } from '../model/types'
+import { DEFAULT_LAYER_OPACITY } from '../map/tileCatalog'
 import { newId } from './ids'
 import { normalize } from './normalize'
 import { buildDoc, type ParseResult } from './parseGpx'
@@ -185,16 +186,18 @@ export function kmlToDoc(
 
   // A file like happyman_XYZ.kml defines eight alternative basemaps; showing
   // them all at once just stacks opaque tiles, so only the first starts on.
-  result.doc.tiles = extractTileLayers(xml).map((raw, index) => ({
+  result.tiles = extractTileLayers(xml).map((raw, index) => ({
     id: newId('tile'),
     name: raw.name,
     visible: index === 0,
-    opacity: raw.opacity,
+    // Honour an explicit alpha; otherwise use the shared semi-transparent default.
+    opacity: raw.opacity < 1 ? raw.opacity : DEFAULT_LAYER_OPACITY,
     url: raw.url,
     ...(raw.bounds ? { bounds: raw.bounds } : {}),
     minzoom: raw.minzoom,
     maxzoom: raw.maxzoom,
     tms: false,
+    origin: name,
   }))
 
   if (!resolveImage) return result

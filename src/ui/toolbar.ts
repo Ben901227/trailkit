@@ -1,15 +1,14 @@
-import { BASEMAPS } from '../map/basemaps'
 import { canRedo, canUndo, redo, undo } from '../model/history'
-import { setBasemap, setEditing } from '../model/store'
+import { setEditing } from '../model/store'
 import type { AppState } from '../model/types'
 import { clear, h } from './dom'
 
 export interface ToolbarHooks {
   exportDocs: () => void
+  openLayers: () => void
   openFiles: (files: File[]) => void
   fitAll: () => void
   togglePanel: () => void
-  setCustomBasemap: (url: string | null) => void
 }
 
 export function renderToolbar(host: HTMLElement, state: AppState, hooks: ToolbarHooks): void {
@@ -25,24 +24,6 @@ export function renderToolbar(host: HTMLElement, state: AppState, hooks: Toolbar
   input.addEventListener('change', () => {
     if (input.files?.length) hooks.openFiles(Array.from(input.files))
     input.value = ''
-  })
-
-  const select = h('select', { title: '底圖' }) as HTMLSelectElement
-  for (const b of BASEMAPS) {
-    select.append(h('option', { value: b.id }, b.label))
-  }
-  select.append(h('option', { value: 'custom' }, '自訂圖磚網址…'))
-  select.value = state.basemapId
-  select.addEventListener('change', () => {
-    if (select.value === 'custom') {
-      const url = window.prompt('輸入 XYZ 圖磚網址，例如 https://example.com/{z}/{x}/{y}.png')
-      if (!url) {
-        select.value = state.basemapId
-        return
-      }
-      hooks.setCustomBasemap(url)
-    }
-    setBasemap(select.value)
   })
 
   const undoBtn = h('button.icon', { title: '復原 (⌘Z)', onclick: () => undo() }, '↶')
@@ -67,7 +48,7 @@ export function renderToolbar(host: HTMLElement, state: AppState, hooks: Toolbar
     ),
     h('button', { onclick: hooks.fitAll, title: '縮放到全部內容' }, '全覽'),
     h('span.spacer'),
-    select,
-    h('button.sheet-toggle', { onclick: hooks.togglePanel }, '圖層'),
+    h('button', { onclick: hooks.openLayers, title: '底圖與疊加圖層' }, '圖層'),
+    h('button.sheet-toggle', { onclick: hooks.togglePanel }, '面板'),
   )
 }

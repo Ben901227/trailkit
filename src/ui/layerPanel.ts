@@ -95,7 +95,7 @@ export function renderLayerPanel(host: HTMLElement, state: AppState, hooks: Pane
   }
 
   for (const doc of state.docs) {
-    const itemCount = doc.tracks.length + doc.waypoints.length + doc.tiles.length + doc.overlays.length
+    const itemCount = doc.tracks.length + doc.waypoints.length + doc.overlays.length
     const open = isExpanded(doc.id, itemCount)
     const card = h('div.doc')
     card.append(
@@ -155,20 +155,6 @@ export function renderLayerPanel(host: HTMLElement, state: AppState, hooks: Pane
           wpt.name,
           null,
           wpt.visible,
-          hooks,
-        ),
-      )
-    }
-
-    if (doc.tiles.length) card.append(h('div.section-label', {}, `圖磚圖層 (${doc.tiles.length})`))
-    for (const tile of doc.tiles) {
-      card.append(
-        itemRow(
-          state,
-          { kind: 'tile', docId: doc.id, id: tile.id },
-          tile.name,
-          `${Math.round(tile.opacity * 100)}%`,
-          tile.visible,
           hooks,
         ),
       )

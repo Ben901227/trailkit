@@ -38,7 +38,6 @@ function docs(): Doc[] {
       ],
       waypoints: [],
       overlays: [],
-      tiles: [],
     },
   ]
 }

@@ -1,5 +1,5 @@
 import JSZip from 'jszip'
-import type { Doc } from '../model/types'
+import type { Doc, TileLayer } from '../model/types'
 import { writeKml, type KmlImage } from './writeKml'
 
 function extensionFor(type: string | undefined): string {
@@ -10,7 +10,7 @@ function extensionFor(type: string | undefined): string {
 }
 
 /** Package the KML plus every overlay image we still hold bytes for. */
-export async function writeKmz(docs: Doc[], name = 'export'): Promise<Blob> {
+export async function writeKmz(docs: Doc[], name = 'export', layers: TileLayer[] = []): Promise<Blob> {
   const zip = new JSZip()
   const images: KmlImage[] = []
 
@@ -24,6 +24,6 @@ export async function writeKmz(docs: Doc[], name = 'export'): Promise<Blob> {
     }
   }
 
-  zip.file('doc.kml', writeKml(docs, name, images))
+  zip.file('doc.kml', writeKml(docs, name, images, layers))
   return zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.google-earth.kmz' })
 }

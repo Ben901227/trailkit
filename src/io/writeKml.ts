@@ -93,9 +93,18 @@ export interface KmlImage {
 }
 
 /** `images` maps overlays to the href they will live at (used by the KMZ packer). */
-export function writeKml(docs: Doc[], name = 'export', images: KmlImage[] = []): string {
+export function writeKml(
+  docs: Doc[],
+  name = 'export',
+  images: KmlImage[] = [],
+  layers: TileLayer[] = [],
+): string {
   const styles: string[] = []
   const body: string[] = []
+
+  if (layers.length) {
+    body.push(`  <Folder>\n    <name>圖磚圖層</name>\n${layers.map(tileXml).join('')}  </Folder>\n`)
+  }
 
   docs.forEach((doc) => {
     const parts: string[] = []
@@ -109,7 +118,6 @@ export function writeKml(docs: Doc[], name = 'export', images: KmlImage[] = []):
       parts.push(trackXml(t, styleId))
     })
     doc.waypoints.forEach((w) => parts.push(waypointXml(w)))
-    doc.tiles.forEach((t) => parts.push(tileXml(t)))
     doc.overlays.forEach((o) => {
       const href = images.find((i) => i.overlayId === o.id)?.href ?? o.url
       parts.push(overlayXml(o, href))

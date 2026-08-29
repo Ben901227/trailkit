@@ -61,6 +61,8 @@ export interface TileLayer {
   maxzoom: number
   /** Some pyramids number rows from the south; this flips y. */
   tms: boolean
+  /** Where it came from — a built-in name, or the file that defined it. */
+  origin: string
 }
 
 /** One opened file. */
@@ -71,19 +73,24 @@ export interface Doc {
   tracks: Track[]
   waypoints: Waypoint[]
   overlays: Overlay[]
-  tiles: TileLayer[]
 }
 
 export type Selection =
   | { kind: 'track'; docId: string; id: string }
   | { kind: 'waypoint'; docId: string; id: string }
   | { kind: 'overlay'; docId: string; id: string }
-  | { kind: 'tile'; docId: string; id: string }
 
 export interface AppState {
   docs: Doc[]
+  /**
+   * Raster layers stacked over the basemap, shared across files: built-ins
+   * plus anything an imported KML defined. First in the array draws lowest.
+   */
+  layers: TileLayer[]
   selection: Selection | null
   basemapId: string
+  /** Tile URL for the "custom" basemap entry, when the user supplied one. */
+  customBasemapUrl: string | null
   /** Editing is a mode: it changes what taps on the map do. */
   editing: boolean
   /** Index of the point being worked on inside the selected track. */
@@ -106,6 +113,6 @@ export function findOverlay(state: AppState, docId: string, id: string): Overlay
   return state.docs.find((d) => d.id === docId)?.overlays.find((o) => o.id === id)
 }
 
-export function findTile(state: AppState, docId: string, id: string): TileLayer | undefined {
-  return state.docs.find((d) => d.id === docId)?.tiles.find((t) => t.id === id)
+export function findLayer(state: AppState, id: string): TileLayer | undefined {
+  return state.layers.find((t) => t.id === id)
 }

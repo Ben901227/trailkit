@@ -222,3 +222,28 @@ input.text {
 
 .doc-head { cursor: pointer; user-select: none; }
 .doc-head .caret { color: var(--muted); width: 12px; }
+
+/* ---------- layers panel ---------- */
+
+.layer-section { margin-bottom: 18px; }
+.layer-section > select { width: 100%; }
+.group-label { font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+
+.layer {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+}
+
+.layer-head { display: flex; align-items: center; gap: 8px; min-height: 32px; }
+.layer-head .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.layer-head input[type="checkbox"] { width: 18px; height: 18px; }
+.layer-controls { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.layer-controls .opacity { flex: 1; }
+.layer-controls .meta { color: var(--muted); font-size: 12px; width: 38px; text-align: right; }
+
+.panel-body .hint { color: var(--muted); font-size: 12px; margin: 8px 0 0; }
+
+button:disabled { opacity: .4; cursor: default; }
+button:disabled:hover { border-color: var(--line); }

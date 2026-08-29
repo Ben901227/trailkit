@@ -2,9 +2,10 @@ import type { AppState } from '../model/types'
 import { clear, h } from './dom'
 import { renderInspector } from './inspector'
 import { renderLayerPanel, type PanelHooks } from './layerPanel'
+import { renderLayersPanel } from './layersPanel'
 
-type Tab = 'layers' | 'info'
-let activeTab: Tab = 'layers'
+type Tab = 'files' | 'layers' | 'info'
+let activeTab: Tab = 'files'
 
 export function setTab(tab: Tab): void {
   activeTab = tab
@@ -37,9 +38,10 @@ export function renderPanel(panel: HTMLElement, state: AppState, hooks: PanelHoo
     btn.textContent = label
     return btn
   }
-  tabs.append(mk('layers', '圖層'), mk('info', '資訊'))
+  tabs.append(mk('files', '檔案'), mk('layers', '圖層'), mk('info', '資訊'))
   panel.append(tabs, body)
 
-  if (activeTab === 'layers') renderLayerPanel(body, state, hooks)
+  if (activeTab === 'files') renderLayerPanel(body, state, hooks)
+  else if (activeTab === 'layers') renderLayersPanel(body, state)
   else renderInspector(body, state)
 }

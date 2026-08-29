@@ -1,11 +1,13 @@
-import type { AppState, Doc, Selection } from './types'
+import type { AppState, Doc, Selection, TileLayer } from './types'
 
 type Listener = (state: AppState) => void
 
 const initial: AppState = {
   docs: [],
+  layers: [],
   selection: null,
   basemapId: 'osm',
+  customBasemapUrl: null,
   editing: false,
   vertex: null,
 }
@@ -75,8 +77,6 @@ export function setVisible(sel: Selection, visible: boolean): void {
         return { ...d, tracks: d.tracks.map((t) => (t.id === sel.id ? { ...t, visible } : t)) }
       if (sel.kind === 'waypoint')
         return { ...d, waypoints: d.waypoints.map((w) => (w.id === sel.id ? { ...w, visible } : w)) }
-      if (sel.kind === 'tile')
-        return { ...d, tiles: d.tiles.map((t) => (t.id === sel.id ? { ...t, visible } : t)) }
       return { ...d, overlays: d.overlays.map((o) => (o.id === sel.id ? { ...o, visible } : o)) }
     }),
   }))
@@ -91,4 +91,49 @@ export function setTrackColor(docId: string, trackId: string, color: string): vo
         : d,
     ),
   }))
+}
+
+/* ---------- raster layer stack ---------- */
+
+/** Add layers, skipping any URL the stack already has. */
+export function addLayers(layers: TileLayer[]): TileLayer[] {
+  const added: TileLayer[] = []
+  update((s) => {
+    const seen = new Set(s.layers.map((l) => l.url))
+    for (const layer of layers) {
+      if (seen.has(layer.url)) continue
+      seen.add(layer.url)
+      added.push(layer)
+    }
+    return added.length ? { ...s, layers: [...s.layers, ...added] } : s
+  })
+  return added
+}
+
+export function removeLayer(id: string): void {
+  update((s) => ({ ...s, layers: s.layers.filter((l) => l.id !== id) }))
+}
+
+export function patchLayer(id: string, patch: Partial<TileLayer>): void {
+  update((s) => ({
+    ...s,
+    layers: s.layers.map((l) => (l.id === id ? { ...l, ...patch } : l)),
+  }))
+}
+
+/** Move a layer one step up (later = drawn higher) or down the stack. */
+export function moveLayer(id: string, direction: -1 | 1): void {
+  update((s) => {
+    const index = s.layers.findIndex((l) => l.id === id)
+    const target = index + direction
+    if (index < 0 || target < 0 || target >= s.layers.length) return s
+    const layers = s.layers.slice()
+    const [moved] = layers.splice(index, 1)
+    layers.splice(target, 0, moved as TileLayer)
+    return { ...s, layers }
+  })
+}
+
+export function setCustomBasemapUrl(url: string | null): void {
+  update((s) => ({ ...s, customBasemapUrl: url }))
 }

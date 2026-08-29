@@ -10,7 +10,8 @@ import { syncTileLayers } from './map/tileLayers'
 import { syncTrackLayers, syncVertexLayer, visiblePositions } from './map/trackLayers'
 import { bounds } from './model/stats'
 import { checkpoint, onHistoryChange, redo, undo } from './model/history'
-import { addDocs, getState, setSelection, subscribe } from './model/store'
+import { loadLayerPreferences, saveLayerPreferences } from './model/persist'
+import { addDocs, addLayers, getState, setSelection, subscribe } from './model/store'
 import { selectionKey, type AppState, type Selection } from './model/types'
 import { installVertexTool } from './edit/vertexTool'
 import { openExportDialog } from './ui/exportDialog'
@@ -24,8 +25,7 @@ const panelEl = document.getElementById('panel') as HTMLElement
 const toolbarEl = document.getElementById('toolbar') as HTMLElement
 initToasts(document.getElementById('toasts') as HTMLElement)
 
-let customBasemapUrl: string | null = null
-let lastBasemapId = getState().basemapId
+let lastBasemapId = `${getState().basemapId}|`
 let map: MLMap | null = null
 // Map sources only exist once the style has loaded; renders before that are UI-only.
 let styleReady = false
@@ -38,9 +38,7 @@ function positionsFor(state: AppState, sel: Selection) {
     const w = doc.waypoints.find((x) => x.id === sel.id)
     return w ? [w.geometry.coordinates] : []
   }
-  if (sel.kind === 'overlay') return doc.overlays.find((o) => o.id === sel.id)?.corners ?? []
-  const box = doc.tiles.find((t) => t.id === sel.id)?.bounds
-  return box ? [[box[0], box[1]], [box[2], box[3]]] : []
+  return doc.overlays.find((o) => o.id === sel.id)?.corners ?? []
 }
 
 const hooks = {
@@ -69,7 +67,13 @@ async function openFiles(files: File[]): Promise<void> {
     toast(`略過：${skipped[0]}${more}`, 'error')
   }
 
-  const docs = results.map((r) => r.doc)
+  const importedLayers = addLayers(results.flatMap((r) => r.tiles))
+  if (importedLayers.length) toast(`已加入 ${importedLayers.length} 個圖磚圖層`)
+
+  // A KML that only defines raster layers has no geometry to list as a file.
+  const docs = results
+    .map((r) => r.doc)
+    .filter((d) => d.tracks.length || d.waypoints.length || d.overlays.length)
   if (!docs.length) return
   checkpoint('開啟檔案')
 
@@ -97,16 +101,19 @@ function render(state: AppState): void {
     exportDocs: openExportDialog,
     fitAll,
     togglePanel: () => togglePanel(panelEl),
-    setCustomBasemap: (url) => {
-      customBasemapUrl = url
+    openLayers: () => {
+      setTab('layers')
+      togglePanel(panelEl, true)
+      renderPanel(panelEl, getState(), hooks)
     },
   })
   renderPanel(panelEl, state, hooks)
 
   if (!map || !styleReady) return
-  if (state.basemapId !== lastBasemapId || state.basemapId === 'custom') {
-    lastBasemapId = state.basemapId
-    applyBasemap(map, state.basemapId, customBasemapUrl)
+  const basemapKey = `${state.basemapId}|${state.customBasemapUrl ?? ''}`
+  if (basemapKey !== lastBasemapId) {
+    lastBasemapId = basemapKey
+    applyBasemap(map, state.basemapId, state.customBasemapUrl)
   }
   syncTrackLayers(map, state)
   syncVertexLayer(map, state)
@@ -174,6 +181,14 @@ function start(): void {
   if (import.meta.env.DEV) (window as unknown as Record<string, unknown>)['__map'] = map
 
   installVertexTool(map)
+  loadLayerPreferences()
+
+  let saveTimer: number | undefined
+  subscribe((state) => {
+    // Sliders fire continuously; write at most once per idle moment.
+    window.clearTimeout(saveTimer)
+    saveTimer = window.setTimeout(() => saveLayerPreferences(state), 400)
+  })
   initDropZone(document.body, (files) => void openFiles(files))
   onHistoryChange(() => render(getState()))
   installShortcuts()

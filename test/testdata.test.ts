@@ -33,10 +33,10 @@ it('imports every one of them without dropping content', async () => {
       else if (fmt === 'kml') r = kmlToDoc(parse(new TextDecoder().decode(bytes)), name, () => null)
       else throw new Error('unrecognised')
       const pts = r.doc.tracks.reduce((n, t) => n + t.geometry.coordinates.length, 0)
-      rows.push(`${fmt}\t${Date.now() - t0}ms\ttrk=${r.doc.tracks.length}(${pts}pt) wpt=${r.doc.waypoints.length} tile=${r.doc.tiles.length} ovl=${r.doc.overlays.length} skip=${r.skipped.length}\t${name}`)
+      rows.push(`${fmt}\t${Date.now() - t0}ms\ttrk=${r.doc.tracks.length}(${pts}pt) wpt=${r.doc.waypoints.length} tile=${r.tiles.length} ovl=${r.doc.overlays.length} skip=${r.skipped.length}\t${name}`)
       if (r.skipped.length) rows.push(`   skipped: ${r.skipped.slice(0, 3).join(' ; ')}`)
       expect(
-        r.doc.tracks.length + r.doc.waypoints.length + r.doc.tiles.length + r.doc.overlays.length,
+        r.doc.tracks.length + r.doc.waypoints.length + r.tiles.length + r.doc.overlays.length,
         `${name} produced nothing`,
       ).toBeGreaterThan(0)
       expect(r.skipped, `${name} skipped content`).toEqual([])
