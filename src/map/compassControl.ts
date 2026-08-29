@@ -71,11 +71,11 @@ const ROSE_SVG = `
   </g>
   <polygon points="50,22 43,52 57,52" fill="#d64545"/>
   <polygon points="50,78 43,48 57,48" fill="#98a2b3"/>
-  <g font-size="14" font-weight="700" text-anchor="middle"
-     font-family="system-ui, 'Noto Sans TC', sans-serif" fill="var(--ink)">
-    <text x="50" y="17">北</text>
-    <text x="50" y="90">南</text>
-    <text x="83" y="55">東</text>
-    <text x="17" y="55">西</text>
+  <g font-size="16" font-weight="700" text-anchor="middle"
+     font-family="system-ui, sans-serif" fill="var(--ink)">
+    <text x="50" y="19">N</text>
+    <text x="50" y="89">S</text>
+    <text x="82" y="56">E</text>
+    <text x="18" y="56">W</text>
   </g>
 </svg>`
