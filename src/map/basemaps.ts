@@ -63,3 +63,15 @@ export function findBasemap(id: string, customUrl: string | null): Basemap {
   if (id === CUSTOM_KEY && customUrl) return customBasemap(customUrl)
   return BASEMAPS.find((b) => b.id === id) ?? (BASEMAPS[0] as Basemap)
 }
+
+/**
+ * Elevation tiles for the 3D view. AWS Open Data's terrarium set is free and
+ * needs no key; MapLibre decodes the 'terrarium' encoding natively.
+ */
+export const TERRAIN = {
+  url: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png',
+  encoding: 'terrarium' as const,
+  tileSize: 256,
+  maxzoom: 15,
+  attribution: 'Terrain: AWS Open Data / Mapzen',
+}

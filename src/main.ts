@@ -5,13 +5,14 @@ import type { Map as MLMap } from 'maplibre-gl'
 import { colorForIndex } from './io/ids'
 import { docFromOverlays, isImageFile, overlayFromImage } from './io/imageOverlay'
 import { loadFiles } from './io/loadFile'
-import { applyBasemap, createMap, fitTo } from './map/mapView'
+import { applyBasemap, createMap, fitTo, setTerrain } from './map/mapView'
 import { syncOverlayLayers } from './map/overlayLayers'
 import { syncTileLayers } from './map/tileLayers'
 import { syncCornerLayer, syncTrackLayers, syncVertexLayer, visiblePositions } from './map/trackLayers'
 import { bounds } from './model/stats'
 import { checkpoint, onHistoryChange, redo, undo } from './model/history'
 import { loadLayerPreferences, saveLayerPreferences } from './model/persist'
+import { loadSession, saveSession } from './model/session'
 import { addDocs, addLayers, getState, setSelection, subscribe } from './model/store'
 import { selectionKey, type AppState, type Selection } from './model/types'
 import { installVertexTool } from './edit/vertexTool'
@@ -31,6 +32,7 @@ let lastBasemapId = `${getState().basemapId}|`
 let map: MLMap | null = null
 // Map sources only exist once the style has loaded; renders before that are UI-only.
 let styleReady = false
+let terrainOn = false
 
 function positionsFor(state: AppState, sel: Selection) {
   const doc = state.docs.find((d) => d.id === sel.docId)
@@ -143,6 +145,10 @@ function render(state: AppState): void {
     lastBasemapId = basemapKey
     applyBasemap(map, state.basemapId, state.customBasemapUrl)
   }
+  if (state.terrain !== terrainOn) {
+    terrainOn = state.terrain
+    setTerrain(map, state.terrain)
+  }
   syncTrackLayers(map, state)
   syncVertexLayer(map, state)
   syncCornerLayer(map, state)
@@ -158,6 +164,15 @@ function selectFromMap(features: maplibregl.MapGeoJSONFeature[]): void {
   setSelection({ kind, docId, id } as Selection)
   setTab('info')
   renderPanel(panelEl, getState(), hooks)
+}
+
+async function restoreSession(): Promise<void> {
+  const docs = await loadSession()
+  if (!docs.length || getState().docs.length) return
+  addDocs(docs)
+  const box = bounds(visiblePositions(getState()))
+  if (box && map) fitTo(map, box)
+  toast(`已還原上次的 ${docs.length} 個檔案`)
 }
 
 function installShortcuts(): void {
@@ -211,12 +226,20 @@ function start(): void {
 
   installVertexTool(map)
   loadLayerPreferences()
+  void restoreSession()
 
   let saveTimer: number | undefined
+  let savedDocs = getState().docs
   subscribe((state) => {
-    // Sliders fire continuously; write at most once per idle moment.
+    // Sliders and drags fire continuously; write at most once per idle moment.
     window.clearTimeout(saveTimer)
-    saveTimer = window.setTimeout(() => saveLayerPreferences(state), 400)
+    saveTimer = window.setTimeout(() => {
+      saveLayerPreferences(state)
+      if (state.docs !== savedDocs) {
+        savedDocs = state.docs
+        void saveSession(state.docs)
+      }
+    }, 600)
   })
   initDropZone(document.body, (files) => void openFiles(files))
   onHistoryChange(() => render(getState()))

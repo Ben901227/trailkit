@@ -9,6 +9,7 @@ const initial: AppState = {
   basemapId: 'osm',
   customBasemapUrl: null,
   editing: false,
+  terrain: false,
   vertex: null,
 }
 
@@ -52,6 +53,17 @@ export function setSelection(selection: Selection | null): void {
 
 export function setEditing(editing: boolean): void {
   update((s) => ({ ...s, editing, vertex: editing ? s.vertex : null }))
+}
+
+/** Turning on 3D leaves editing mode: dragging points on a tilted, draped
+ * surface is not something you can do accurately. */
+export function setTerrain(terrain: boolean): void {
+  update((s) => ({
+    ...s,
+    terrain,
+    editing: terrain ? false : s.editing,
+    vertex: terrain ? null : s.vertex,
+  }))
 }
 
 export function setVertex(vertex: number | null): void {

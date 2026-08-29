@@ -261,3 +261,5 @@ button:disabled:hover { border-color: var(--line); }
 .merge-row input[type="checkbox"] { width: 18px; height: 18px; }
 .merge-row button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .modal .hint { color: var(--muted); font-size: 12px; margin: 10px 0 0; }
+
+.panel-actions { display: flex; justify-content: flex-end; margin-bottom: 8px; }

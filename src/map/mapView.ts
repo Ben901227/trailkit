@@ -1,5 +1,5 @@
 import maplibregl, { type LngLatBoundsLike, type Map as MLMap } from 'maplibre-gl'
-import { BASEMAPS, findBasemap, type Basemap } from './basemaps'
+import { BASEMAPS, TERRAIN, findBasemap, type Basemap } from './basemaps'
 
 export const SRC_BASEMAP = 'basemap'
 export const SRC_TRACKS = 'tracks'
@@ -173,3 +173,25 @@ export function fitTo(map: MLMap, box: [number, number, number, number]): void {
 }
 
 export { BASEMAPS }
+
+
+const SRC_TERRAIN = 'terrain-dem'
+
+/**
+ * Turn the 3D view on or off. The DEM source is added lazily so a session
+ * that never opens 3D never fetches an elevation tile.
+ */
+export function setTerrain(map: MLMap, on: boolean): void {
+  if (on && !map.getSource(SRC_TERRAIN)) {
+    map.addSource(SRC_TERRAIN, {
+      type: 'raster-dem',
+      tiles: [TERRAIN.url],
+      encoding: TERRAIN.encoding,
+      tileSize: TERRAIN.tileSize,
+      maxzoom: TERRAIN.maxzoom,
+      attribution: TERRAIN.attribution,
+    })
+  }
+  map.setTerrain(on ? { source: SRC_TERRAIN, exaggeration: 1.3 } : null)
+  map.easeTo({ pitch: on ? 62 : 0, duration: 600 })
+}

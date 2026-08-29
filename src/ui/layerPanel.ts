@@ -91,10 +91,32 @@ export function renderLayerPanel(host: HTMLElement, state: AppState, hooks: Pane
 
   if (!state.docs.length) {
     host.append(
-      h('div.empty', {}, '尚未開啟檔案。點上方「開啟檔案」，或把 GPX / KML / KMZ 拖進來。'),
+      h(
+        'div.empty',
+        {},
+        '尚未開啟檔案。點上方「開啟檔案」，或把 GPX / KML / KMZ / 圖片拖進來。',
+      ),
     )
     return
   }
+
+  host.append(
+    h(
+      'div.panel-actions',
+      {},
+      h(
+        'button.danger',
+        {
+          onclick: () => {
+            if (!window.confirm('關閉全部檔案？（圖層設定會保留）')) return
+            checkpoint('關閉全部檔案')
+            for (const doc of [...state.docs]) removeDoc(doc.id)
+          },
+        },
+        '關閉全部',
+      ),
+    ),
+  )
 
   for (const doc of state.docs) {
     const itemCount = doc.tracks.length + doc.waypoints.length + doc.overlays.length

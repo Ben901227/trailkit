@@ -1,5 +1,5 @@
 import { canRedo, canUndo, redo, undo } from '../model/history'
-import { setEditing } from '../model/store'
+import { setEditing, setTerrain } from '../model/store'
 import type { AppState } from '../model/types'
 import { clear, h } from './dom'
 
@@ -43,10 +43,16 @@ export function renderToolbar(host: HTMLElement, state: AppState, hooks: Toolbar
     h(
       'button' + (state.editing ? '.primary' : ''),
       {
-        title: state.selection?.kind === 'track' ? '編輯選取的軌跡' : '先選一條軌跡',
+        title: state.terrain ? '3D 檢視下無法編輯' : '編輯選取的項目',
         onclick: () => setEditing(!state.editing),
+        disabled: state.terrain,
       },
       state.editing ? '編輯中' : '編輯',
+    ),
+    h(
+      'button' + (state.terrain ? '.primary' : ''),
+      { title: '3D 地形檢視（只能瀏覽）', onclick: () => setTerrain(!state.terrain) },
+      '3D',
     ),
     h('button', { onclick: hooks.fitAll, title: '縮放到全部內容' }, '全覽'),
     h('span.spacer'),

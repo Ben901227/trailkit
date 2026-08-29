@@ -93,6 +93,8 @@ export interface AppState {
   customBasemapUrl: string | null
   /** Editing is a mode: it changes what taps on the map do. */
   editing: boolean
+  /** 3D terrain view. Editing is disabled while it is on. */
+  terrain: boolean
   /** Index of the point being worked on inside the selected track. */
   vertex: number | null
 }
