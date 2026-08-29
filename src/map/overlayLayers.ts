@@ -18,7 +18,7 @@ export function syncOverlayLayers(map: MLMap, state: AppState): void {
   }
 
   // Remove overlays that are gone.
-  for (const id of Object.keys(map.getStyle().sources)) {
+  for (const id of Object.keys(map.getStyle()?.sources ?? {})) {
     if (!id.startsWith('ovl_src_') || wanted.has(id)) continue
     const layer = id.replace('ovl_src_', 'ovl_lyr_')
     if (map.getLayer(layer)) map.removeLayer(layer)

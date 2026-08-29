@@ -4,6 +4,7 @@ import { BASEMAPS, findBasemap, type Basemap } from './basemaps'
 export const SRC_BASEMAP = 'basemap'
 export const SRC_TRACKS = 'tracks'
 export const SRC_WAYPOINTS = 'waypoints'
+export const SRC_VERTICES = 'vertices'
 
 function baseStyle(basemap: Basemap): maplibregl.StyleSpecification {
   return {
@@ -18,6 +19,7 @@ function baseStyle(basemap: Basemap): maplibregl.StyleSpecification {
       },
       [SRC_TRACKS]: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
       [SRC_WAYPOINTS]: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
+      [SRC_VERTICES]: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
     },
     layers: [
       { id: 'basemap', type: 'raster', source: SRC_BASEMAP },
@@ -74,10 +76,28 @@ function baseStyle(basemap: Basemap): maplibregl.StyleSpecification {
         paint: { 'circle-radius': 20, 'circle-color': '#000000', 'circle-opacity': 0 },
       },
       {
+        id: 'vertex-circle',
+        type: 'circle',
+        source: SRC_VERTICES,
+        paint: {
+          'circle-radius': ['case', ['get', 'active'], 8, 5],
+          'circle-color': ['case', ['get', 'active'], '#ffd166', '#ffffff'],
+          'circle-stroke-color': '#1f2933',
+          'circle-stroke-width': 2,
+        },
+      },
+      {
         id: 'track-hit',
         type: 'line',
         source: SRC_TRACKS,
         paint: { 'line-color': '#000000', 'line-opacity': 0, 'line-width': 24 },
+      },
+      // Finger-sized target, drawn last so it wins hit-testing over the line.
+      {
+        id: 'vertex-hit',
+        type: 'circle',
+        source: SRC_VERTICES,
+        paint: { 'circle-radius': 18, 'circle-color': '#000000', 'circle-opacity': 0 },
       },
     ],
   } as maplibregl.StyleSpecification

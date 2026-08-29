@@ -1,6 +1,6 @@
 import { BASEMAPS } from '../map/basemaps'
 import { canRedo, canUndo, redo, undo } from '../model/history'
-import { setBasemap } from '../model/store'
+import { setBasemap, setEditing } from '../model/store'
 import type { AppState } from '../model/types'
 import { clear, h } from './dom'
 
@@ -57,6 +57,14 @@ export function renderToolbar(host: HTMLElement, state: AppState, hooks: Toolbar
     h('button', { onclick: hooks.exportDocs, title: '匯出檔案' }, '匯出'),
     undoBtn,
     redoBtn,
+    h(
+      'button' + (state.editing ? '.primary' : ''),
+      {
+        title: state.selection?.kind === 'track' ? '編輯選取的軌跡' : '先選一條軌跡',
+        onclick: () => setEditing(!state.editing),
+      },
+      state.editing ? '編輯中' : '編輯',
+    ),
     h('button', { onclick: hooks.fitAll, title: '縮放到全部內容' }, '全覽'),
     h('span.spacer'),
     select,

@@ -9,6 +9,32 @@ export interface PanelHooks {
   zoomTo: (sel: Selection) => void
 }
 
+/**
+ * A single GPX can hold hundreds of waypoints, so documents collapse by
+ * default past this size — otherwise every state change re-renders thousands
+ * of rows.
+ */
+const AUTO_COLLAPSE_ITEMS = 12
+
+const expanded = new Set<string>()
+const collapsed = new Set<string>()
+
+function isExpanded(docId: string, itemCount: number): boolean {
+  if (expanded.has(docId)) return true
+  if (collapsed.has(docId)) return false
+  return itemCount <= AUTO_COLLAPSE_ITEMS
+}
+
+function toggleDoc(docId: string, itemCount: number): void {
+  if (isExpanded(docId, itemCount)) {
+    expanded.delete(docId)
+    collapsed.add(docId)
+  } else {
+    collapsed.delete(docId)
+    expanded.add(docId)
+  }
+}
+
 function itemRow(
   state: AppState,
   sel: Selection,
@@ -69,18 +95,27 @@ export function renderLayerPanel(host: HTMLElement, state: AppState, hooks: Pane
   }
 
   for (const doc of state.docs) {
+    const itemCount = doc.tracks.length + doc.waypoints.length + doc.tiles.length + doc.overlays.length
+    const open = isExpanded(doc.id, itemCount)
     const card = h('div.doc')
     card.append(
       h(
         'div.doc-head',
-        {},
+        {
+          onclick: () => {
+            toggleDoc(doc.id, itemCount)
+            renderLayerPanel(host, state, hooks)
+          },
+        },
+        h('span.caret', {}, open ? '▾' : '▸'),
         h('span.name', { title: doc.name }, doc.name),
-        h('span.tag', {}, doc.sourceFormat),
+        h('span.tag', {}, `${itemCount} 項`),
         h(
           'button.icon.danger',
           {
           title: '關閉此檔案',
-          onclick: () => {
+          onclick: (e: Event) => {
+            e.stopPropagation()
             checkpoint(`關閉 ${doc.name}`)
             removeDoc(doc.id)
           },
@@ -89,6 +124,11 @@ export function renderLayerPanel(host: HTMLElement, state: AppState, hooks: Pane
         ),
       ),
     )
+
+    if (!open) {
+      host.append(card)
+      continue
+    }
 
     if (doc.tracks.length) card.append(h('div.section-label', {}, `軌跡 (${doc.tracks.length})`))
     for (const track of doc.tracks) {
@@ -115,6 +155,20 @@ export function renderLayerPanel(host: HTMLElement, state: AppState, hooks: Pane
           wpt.name,
           null,
           wpt.visible,
+          hooks,
+        ),
+      )
+    }
+
+    if (doc.tiles.length) card.append(h('div.section-label', {}, `圖磚圖層 (${doc.tiles.length})`))
+    for (const tile of doc.tiles) {
+      card.append(
+        itemRow(
+          state,
+          { kind: 'tile', docId: doc.id, id: tile.id },
+          tile.name,
+          `${Math.round(tile.opacity * 100)}%`,
+          tile.visible,
           hooks,
         ),
       )

@@ -199,3 +199,26 @@ input.text {
 }
 
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+
+/* ---------- inspector actions ---------- */
+
+.actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+.actions button { flex: 1 1 44%; }
+.actions .hint {
+  flex: 1 1 100%;
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.panel-body .url {
+  font-size: 11px;
+  color: var(--muted);
+  word-break: break-all;
+  margin: 8px 0 0;
+}
+
+.panel-body input[type="range"] { width: 100%; }
+
+.doc-head { cursor: pointer; user-select: none; }
+.doc-head .caret { color: var(--muted); width: 12px; }

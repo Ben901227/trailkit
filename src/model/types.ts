@@ -44,6 +44,25 @@ export interface Overlay {
   blob?: Blob
 }
 
+/**
+ * An XYZ raster layer, as Google Earth writes it in a GroundOverlay's
+ * gx:MapTilePyramid. This is how the historical-map and 魯地圖 KMLs work.
+ */
+export interface TileLayer {
+  id: string
+  name: string
+  visible: boolean
+  opacity: number
+  /** Template with {z}/{x}/{y} placeholders. */
+  url: string
+  /** [west, south, east, north], when the source declares an extent. */
+  bounds?: [number, number, number, number]
+  minzoom: number
+  maxzoom: number
+  /** Some pyramids number rows from the south; this flips y. */
+  tms: boolean
+}
+
 /** One opened file. */
 export interface Doc {
   id: string
@@ -52,17 +71,23 @@ export interface Doc {
   tracks: Track[]
   waypoints: Waypoint[]
   overlays: Overlay[]
+  tiles: TileLayer[]
 }
 
 export type Selection =
   | { kind: 'track'; docId: string; id: string }
   | { kind: 'waypoint'; docId: string; id: string }
   | { kind: 'overlay'; docId: string; id: string }
+  | { kind: 'tile'; docId: string; id: string }
 
 export interface AppState {
   docs: Doc[]
   selection: Selection | null
   basemapId: string
+  /** Editing is a mode: it changes what taps on the map do. */
+  editing: boolean
+  /** Index of the point being worked on inside the selected track. */
+  vertex: number | null
 }
 
 export function selectionKey(s: Selection): string {
@@ -79,4 +104,8 @@ export function findWaypoint(state: AppState, docId: string, id: string): Waypoi
 
 export function findOverlay(state: AppState, docId: string, id: string): Overlay | undefined {
   return state.docs.find((d) => d.id === docId)?.overlays.find((o) => o.id === id)
+}
+
+export function findTile(state: AppState, docId: string, id: string): TileLayer | undefined {
+  return state.docs.find((d) => d.id === docId)?.tiles.find((t) => t.id === id)
 }

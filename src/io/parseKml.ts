@@ -36,12 +36,95 @@ function rotateCorners(
   })
 }
 
+/**
+ * Google Earth writes XYZ templates with doubled braces, and the href is often
+ * percent-encoded. Normalise both into MapLibre's {z}/{x}/{y} form.
+ */
+export function normalizeTileTemplate(href: string): string | null {
+  let url = href
+  if (/%7[bB]/.test(url)) {
+    try {
+      url = decodeURIComponent(url)
+    } catch {
+      // Keep the raw string; the braces below may still be present.
+    }
+  }
+  url = url.replace(/\{\{\s*([zxy])\s*\}\}/gi, (_, axis: string) => `{${axis.toLowerCase()}}`)
+  return /\{z\}/.test(url) && /\{x\}/.test(url) && /\{y\}/.test(url) ? url : null
+}
+
+/**
+ * getElementsByTagName matches the qualified name, so `gx:minLevel` is not
+ * found by `minLevel`. Try both spellings.
+ */
+function firstByLocalName(el: Element | Document, local: string): Element | null {
+  const direct = el.getElementsByTagName(local)[0]
+  if (direct) return direct
+  const prefixed = el.getElementsByTagName(`gx:${local}`)[0]
+  return prefixed ?? null
+}
+
+function numByLocalName(el: Element, local: string): number | null {
+  const found = firstByLocalName(el, local)
+  const value = Number(found?.textContent?.trim())
+  return found && Number.isFinite(value) ? value : null
+}
+
 export interface RawOverlay {
   name: string
   /** `href` exactly as written in the KML; resolved by the caller. */
   href: string
   corners: [number, number][]
   opacity: number
+}
+
+export interface RawTileLayer {
+  name: string
+  url: string
+  bounds?: [number, number, number, number]
+  minzoom: number
+  maxzoom: number
+  opacity: number
+}
+
+/**
+ * Tile pyramids and static image overlays both live inside <GroundOverlay>;
+ * a pyramid's <Icon> is only a placeholder pixel, so the two must not be mixed.
+ */
+export function extractTileLayers(xml: Document): RawTileLayer[] {
+  const out: RawTileLayer[] = []
+  const nodes = xml.getElementsByTagName('GroundOverlay')
+  for (let i = 0; i < nodes.length; i++) {
+    const el = nodes[i]
+    if (!el) continue
+    const pyramid = firstByLocalName(el, 'MapTilePyramid')
+    if (!pyramid) continue
+    const link = firstByLocalName(pyramid, 'Link') ?? pyramid
+    const url = normalizeTileTemplate(text(link, 'href') ?? '')
+    if (!url) continue
+
+    const box = el.getElementsByTagName('LatLonBox')[0]
+    const north = box ? num(box, 'north') : null
+    const south = box ? num(box, 'south') : null
+    const east = box ? num(box, 'east') : null
+    const west = box ? num(box, 'west') : null
+
+    const colour = text(el, 'color')
+    const alpha = colour && colour.length === 8 ? parseInt(colour.slice(0, 2), 16) / 255 : 1
+
+    const layer: RawTileLayer = {
+      name: text(el, 'name') ?? `圖磚圖層 ${out.length + 1}`,
+      url,
+      minzoom: numByLocalName(pyramid, 'minLevel') ?? 0,
+      maxzoom: numByLocalName(pyramid, 'maxLevel') ?? 19,
+      opacity: Number.isFinite(alpha) ? alpha : 1,
+    }
+    if (north !== null && south !== null && east !== null && west !== null) {
+      layer.bounds = [west, south, east, north]
+    }
+    out.push(layer)
+  }
+  return out
 }
 
 /** GroundOverlays, which togeojson does not model. */
@@ -51,6 +134,8 @@ export function extractGroundOverlays(xml: Document): RawOverlay[] {
   for (let i = 0; i < nodes.length; i++) {
     const el = nodes[i]
     if (!el) continue
+    // A tile pyramid is handled by extractTileLayers; its Icon is a stub pixel.
+    if (firstByLocalName(el, 'MapTilePyramid')) continue
     const box = el.getElementsByTagName('LatLonBox')[0]
     const href = el.getElementsByTagName('Icon')[0]
     const hrefText = href ? text(href, 'href') : null
@@ -97,6 +182,21 @@ export function kmlToDoc(
   resolveImage?: (href: string) => { url: string; blob?: Blob } | null,
 ): ParseResult {
   const result = buildDoc(name, 'kml', normalize(kml(xml)))
+
+  // A file like happyman_XYZ.kml defines eight alternative basemaps; showing
+  // them all at once just stacks opaque tiles, so only the first starts on.
+  result.doc.tiles = extractTileLayers(xml).map((raw, index) => ({
+    id: newId('tile'),
+    name: raw.name,
+    visible: index === 0,
+    opacity: raw.opacity,
+    url: raw.url,
+    ...(raw.bounds ? { bounds: raw.bounds } : {}),
+    minzoom: raw.minzoom,
+    maxzoom: raw.maxzoom,
+    tms: false,
+  }))
+
   if (!resolveImage) return result
 
   const overlays: Overlay[] = []

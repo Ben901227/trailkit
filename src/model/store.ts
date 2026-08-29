@@ -6,6 +6,8 @@ const initial: AppState = {
   docs: [],
   selection: null,
   basemapId: 'osm',
+  editing: false,
+  vertex: null,
 }
 
 let state: AppState = initial
@@ -37,11 +39,26 @@ export function removeDoc(docId: string): void {
     ...s,
     docs: s.docs.filter((d) => d.id !== docId),
     selection: s.selection?.docId === docId ? null : s.selection,
+    vertex: s.selection?.docId === docId ? null : s.vertex,
   }))
 }
 
 export function setSelection(selection: Selection | null): void {
-  update((s) => ({ ...s, selection }))
+  // A vertex index only means something within one track.
+  update((s) => ({ ...s, selection, vertex: null }))
+}
+
+export function setEditing(editing: boolean): void {
+  update((s) => ({ ...s, editing, vertex: editing ? s.vertex : null }))
+}
+
+export function setVertex(vertex: number | null): void {
+  update((s) => ({ ...s, vertex }))
+}
+
+/** Replace the documents wholesale; the editing commands return new arrays. */
+export function setDocs(docs: AppState['docs']): void {
+  update((s) => ({ ...s, docs }))
 }
 
 export function setBasemap(basemapId: string): void {
@@ -58,6 +75,8 @@ export function setVisible(sel: Selection, visible: boolean): void {
         return { ...d, tracks: d.tracks.map((t) => (t.id === sel.id ? { ...t, visible } : t)) }
       if (sel.kind === 'waypoint')
         return { ...d, waypoints: d.waypoints.map((w) => (w.id === sel.id ? { ...w, visible } : w)) }
+      if (sel.kind === 'tile')
+        return { ...d, tiles: d.tiles.map((t) => (t.id === sel.id ? { ...t, visible } : t)) }
       return { ...d, overlays: d.overlays.map((o) => (o.id === sel.id ? { ...o, visible } : o)) }
     }),
   }))

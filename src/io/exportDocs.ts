@@ -29,8 +29,9 @@ function pick(state: AppState, scope: ExportScope): Doc[] {
         tracks: d.tracks.filter((t) => t.visible),
         waypoints: d.waypoints.filter((w) => w.visible),
         overlays: d.overlays.filter((o) => o.visible),
+        tiles: d.tiles.filter((t) => t.visible),
       }))
-      .filter((d) => d.tracks.length || d.waypoints.length || d.overlays.length)
+      .filter((d) => d.tracks.length || d.waypoints.length || d.overlays.length || d.tiles.length)
   }
 
   const sel: Selection | null = state.selection
@@ -43,6 +44,7 @@ function pick(state: AppState, scope: ExportScope): Doc[] {
       tracks: sel.kind === 'track' ? doc.tracks.filter((t) => t.id === sel.id) : [],
       waypoints: sel.kind === 'waypoint' ? doc.waypoints.filter((w) => w.id === sel.id) : [],
       overlays: sel.kind === 'overlay' ? doc.overlays.filter((o) => o.id === sel.id) : [],
+      tiles: sel.kind === 'tile' ? doc.tiles.filter((t) => t.id === sel.id) : [],
     },
   ]
 }
@@ -59,6 +61,11 @@ export async function buildExport(state: AppState, req: ExportRequest): Promise<
   if (!docs.length) throw new Error('沒有可匯出的內容')
 
   const warnings: string[] = []
+  const tiles = docs.reduce((n, d) => n + d.tiles.length, 0)
+  if (tiles && req.format !== 'kml' && req.format !== 'kmz') {
+    warnings.push(`只有 KML/KMZ 能保存圖磚圖層，${tiles} 個圖層未包含`)
+  }
+
   const overlays = docs.reduce((n, d) => n + d.overlays.length, 0)
   if (overlays && req.format !== 'kmz' && req.format !== 'kml') {
     warnings.push(`${req.format.toUpperCase()} 無法儲存疊圖，${overlays} 個疊圖未包含`)

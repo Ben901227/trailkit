@@ -2,7 +2,7 @@ import type { Feature, FeatureCollection, Position } from 'geojson'
 import type { Map as MLMap, GeoJSONSource } from 'maplibre-gl'
 import type { AppState } from '../model/types'
 import { selectionKey } from '../model/types'
-import { SRC_TRACKS, SRC_WAYPOINTS } from './mapView'
+import { SRC_TRACKS, SRC_VERTICES, SRC_WAYPOINTS } from './mapView'
 
 export function featureKey(kind: string, docId: string, id: string): string {
   return `${kind}:${docId}:${id}`
@@ -67,4 +67,24 @@ export function visiblePositions(state: AppState): Position[] {
     for (const o of doc.overlays) if (o.visible) out.push(...o.corners)
   }
   return out
+}
+
+/** The editable points of the selected track, shown only in editing mode. */
+export function syncVertexLayer(map: MLMap, state: AppState): void {
+  const source = map.getSource(SRC_VERTICES) as GeoJSONSource | undefined
+  if (!source) return
+
+  const sel = state.selection
+  const features: Feature[] = []
+  if (state.editing && sel?.kind === 'track') {
+    const track = state.docs.find((d) => d.id === sel.docId)?.tracks.find((t) => t.id === sel.id)
+    for (const [index, coord] of (track?.geometry.coordinates ?? []).entries()) {
+      features.push({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: coord },
+        properties: { index, active: index === state.vertex },
+      })
+    }
+  }
+  source.setData({ type: 'FeatureCollection', features })
 }

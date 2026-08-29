@@ -1,4 +1,4 @@
-import type { Doc, Overlay, Track, Waypoint } from '../model/types'
+import type { Doc, Overlay, TileLayer, Track, Waypoint } from '../model/types'
 import { escapeXml } from './writeGpx'
 
 /** `#rrggbb` -> KML's `aabbggrr`. */
@@ -66,6 +66,27 @@ function overlayXml(o: Overlay, href: string): string {
   )
 }
 
+/** Google Earth reads XYZ layers back from a GroundOverlay + gx:MapTilePyramid. */
+function tileXml(t: TileLayer): string {
+  const [west, south, east, north] = t.bounds ?? [-180, -85.05, 180, 85.05]
+  const href = t.url.replace(/\{([zxy])\}/g, '{{$1}}')
+  return (
+    `    <GroundOverlay>\n` +
+    `      <name>${escapeXml(t.name)}</name>\n` +
+    `      <color>${kmlColor('#ffffff', t.opacity)}</color>\n` +
+    // A 1x1 transparent GIF, the placeholder Google Earth itself writes.
+    `      <Icon><href>data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==</href></Icon>\n` +
+    `      <LatLonBox><north>${north}</north><south>${south}</south>` +
+    `<east>${east}</east><west>${west}</west></LatLonBox>\n` +
+    `      <gx:MapTilePyramid xmlns:gx="http://www.google.com/kml/ext/2.2">\n` +
+    `        <Link><href>${escapeXml(href)}</href></Link>\n` +
+    `        <gx:minLevel>${t.minzoom}</gx:minLevel>\n` +
+    `        <gx:maxLevel>${t.maxzoom}</gx:maxLevel>\n` +
+    `      </gx:MapTilePyramid>\n` +
+    `    </GroundOverlay>\n`
+  )
+}
+
 export interface KmlImage {
   overlayId: string
   href: string
@@ -88,6 +109,7 @@ export function writeKml(docs: Doc[], name = 'export', images: KmlImage[] = []):
       parts.push(trackXml(t, styleId))
     })
     doc.waypoints.forEach((w) => parts.push(waypointXml(w)))
+    doc.tiles.forEach((t) => parts.push(tileXml(t)))
     doc.overlays.forEach((o) => {
       const href = images.find((i) => i.overlayId === o.id)?.href ?? o.url
       parts.push(overlayXml(o, href))

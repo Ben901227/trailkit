@@ -17,6 +17,7 @@ function build(name: string, format: Doc['sourceFormat'], n: Normalized): ParseR
       tracks: n.tracks,
       waypoints: n.waypoints,
       overlays: [],
+      tiles: [],
     },
     skipped: n.skipped,
   }

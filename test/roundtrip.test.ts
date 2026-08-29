@@ -67,3 +67,47 @@ describe('GeoJSON round-trip', () => {
     expect(again.waypoints[0]!.name).toBe(original.waypoints[0]!.name)
   })
 })
+
+describe('tile layer round-trip', () => {
+  const source = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">
+  <Document>
+    <GroundOverlay>
+      <name>魯地圖</name>
+      <color>80ffffff</color>
+      <Icon><href>data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==</href></Icon>
+      <LatLonBox><north>25.7</north><south>21.8</south><east>122.1</east><west>119.2</west></LatLonBox>
+      <gx:MapTilePyramid>
+        <Link><href>https://tile.example.tw/map/rudy/%7B%7Bz%7D%7D/%7B%7Bx%7D%7D/%7B%7By%7D%7D.png</href></Link>
+        <gx:minLevel>5</gx:minLevel>
+        <gx:maxLevel>17</gx:maxLevel>
+      </gx:MapTilePyramid>
+    </GroundOverlay>
+  </Document>
+</kml>`
+
+  it('decodes a percent-encoded, double-braced XYZ template', () => {
+    const { doc } = kmlToDoc(parse(source), 'tiles.kml')
+    expect(doc.tiles).toHaveLength(1)
+    expect(doc.tiles[0]!.url).toBe('https://tile.example.tw/map/rudy/{z}/{x}/{y}.png')
+    expect(doc.tiles[0]!.minzoom).toBe(5)
+    expect(doc.tiles[0]!.maxzoom).toBe(17)
+    expect(doc.tiles[0]!.bounds).toEqual([119.2, 21.8, 122.1, 25.7])
+    expect(doc.tiles[0]!.opacity).toBeCloseTo(0x80 / 255, 3)
+  })
+
+  it('does not also report the pyramid as an image overlay', () => {
+    const { doc, skipped } = kmlToDoc(parse(source), 'tiles.kml', () => null)
+    expect(doc.overlays).toHaveLength(0)
+    expect(skipped).toEqual([])
+  })
+
+  it('writes the layer back in a form it can read again', () => {
+    const first = kmlToDoc(parse(source), 'tiles.kml').doc
+    const again = kmlToDoc(parse(writeKml([first], 'tiles')), 'tiles.kml').doc
+    expect(again.tiles[0]!.url).toBe(first.tiles[0]!.url)
+    expect(again.tiles[0]!.minzoom).toBe(5)
+    expect(again.tiles[0]!.maxzoom).toBe(17)
+    expect(again.tiles[0]!.name).toBe('魯地圖')
+  })
+})

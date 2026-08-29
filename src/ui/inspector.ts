@@ -1,8 +1,9 @@
 import { formatDistance, formatTime, trackStats } from '../model/stats'
 import { update } from '../model/store'
 import type { AppState } from '../model/types'
-import { findOverlay, findTrack, findWaypoint } from '../model/types'
+import { findOverlay, findTile, findTrack, findWaypoint } from '../model/types'
 import { clear, h } from './dom'
+import { trackActions, waypointActions } from './trackEditor'
 
 function stats(rows: [string, string][]): HTMLElement {
   const dl = h('dl.stats')
@@ -10,6 +11,30 @@ function stats(rows: [string, string][]): HTMLElement {
     dl.append(h('dt', {}, key), h('dd', {}, value))
   }
   return dl
+}
+
+function patchTile(docId: string, id: string, patch: Partial<{ opacity: number; tms: boolean }>): void {
+  update((s) => ({
+    ...s,
+    docs: s.docs.map((d) =>
+      d.id === docId
+        ? { ...d, tiles: d.tiles.map((t) => (t.id === id ? { ...t, ...patch } : t)) }
+        : d,
+    ),
+  }))
+}
+
+function opacitySlider(value: number, onChange: (opacity: number) => void): HTMLElement {
+  const wrap = h('div')
+  const slider = h('input', {
+    type: 'range',
+    min: '0',
+    max: '100',
+    value: String(Math.round(value * 100)),
+  }) as HTMLInputElement
+  slider.addEventListener('input', () => onChange(Number(slider.value) / 100))
+  wrap.append(h('label', {}, '透明度'), slider)
+  return wrap
 }
 
 export function renderInspector(host: HTMLElement, state: AppState): void {
@@ -34,6 +59,7 @@ export function renderInspector(host: HTMLElement, state: AppState): void {
         ['開始', formatTime(s.start)],
         ['結束', formatTime(s.end)],
       ]),
+      trackActions(state, sel, track),
     )
     return
   }
@@ -50,27 +76,50 @@ export function renderInspector(host: HTMLElement, state: AppState): void {
       ]),
     )
     if (wpt.description) host.append(h('p', {}, wpt.description))
+    host.append(waypointActions(sel, wpt.name, wpt.description))
+    return
+  }
+
+  if (sel.kind === 'tile') {
+    const tile = findTile(state, sel.docId, sel.id)
+    if (!tile) return
+    host.append(
+      h('h3', {}, tile.name),
+      stats([
+        ['縮放範圍', `z${tile.minzoom} – z${tile.maxzoom}`],
+        ['Y 軸', tile.tms ? 'TMS（由南往北）' : 'XYZ（由北往南）'],
+      ]),
+      h('p.url', { title: tile.url }, tile.url),
+      opacitySlider(tile.opacity, (opacity) =>
+        patchTile(sel.docId, sel.id, { opacity }),
+      ),
+      h(
+        'div.actions',
+        {},
+        h(
+          'button',
+          { onclick: () => patchTile(sel.docId, sel.id, { tms: !tile.tms }) },
+          '切換 Y 軸方向',
+        ),
+        h('p.hint', {}, '圖磚上下顛倒或對不上時，切換這個開關。'),
+      ),
+    )
     return
   }
 
   const overlay = findOverlay(state, sel.docId, sel.id)
   if (!overlay) return
-  const slider = h('input', {
-    type: 'range',
-    min: '0',
-    max: '100',
-    value: String(Math.round(overlay.opacity * 100)),
-  }) as HTMLInputElement
-  slider.addEventListener('input', () => {
-    const opacity = Number(slider.value) / 100
-    update((s) => ({
-      ...s,
-      docs: s.docs.map((d) =>
-        d.id === sel.docId
-          ? { ...d, overlays: d.overlays.map((o) => (o.id === sel.id ? { ...o, opacity } : o)) }
-          : d,
-      ),
-    }))
-  })
-  host.append(h('h3', {}, overlay.name), h('label', {}, '透明度'), slider)
+  host.append(
+    h('h3', {}, overlay.name),
+    opacitySlider(overlay.opacity, (opacity) => {
+      update((s) => ({
+        ...s,
+        docs: s.docs.map((d) =>
+          d.id === sel.docId
+            ? { ...d, overlays: d.overlays.map((o) => (o.id === sel.id ? { ...o, opacity } : o)) }
+            : d,
+        ),
+      }))
+    }),
+  )
 }
