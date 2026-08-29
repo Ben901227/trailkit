@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs'
 import { DOMParser } from '@xmldom/xmldom'
 import { describe, expect, it } from 'vitest'
 import { gpxToDoc } from '../src/io/parseGpx'
@@ -66,26 +65,5 @@ describe('declareMissingNamespaces', () => {
       [121.38, 24.43, 1500],
       [121.39, 24.44, 1520],
     ])
-  })
-})
-
-// The file that prompted this: a real OruxMaps export, if it is on hand.
-const REAL = '/Users/ben.yi/Downloads/眉有岩克拉業北稜.gpx'
-let real: string | null = null
-try {
-  real = readFileSync(REAL, 'utf8')
-} catch {
-  real = null
-}
-
-describe.skipIf(!real)('the reported file', () => {
-  it('opens once the missing prefix is declared', () => {
-    const { declared, text } = declareMissingNamespaces(real as string)
-    expect(declared).toEqual(['om'])
-    const xml = new DOMParser().parseFromString(text, 'text/xml') as unknown as Document
-    const { doc } = gpxToDoc(xml, '眉有岩克拉業北稜.gpx')
-    const points = doc.tracks.reduce((n, t) => n + t.geometry.coordinates.length, 0)
-    console.log(`tracks=${doc.tracks.length} points=${points} waypoints=${doc.waypoints.length}`)
-    expect(points).toBeGreaterThan(0)
   })
 })
