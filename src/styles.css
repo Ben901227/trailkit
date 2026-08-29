@@ -1,0 +1,162 @@
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --ink: #1f2933;
+  --muted: #667085;
+  --line: #dfe3e8;
+  --accent: #2f6fed;
+  --danger: #d64545;
+  --toolbar-h: 52px;
+  --panel-w: 320px;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; margin: 0; }
+
+body {
+  font: 14px/1.5 system-ui, -apple-system, "Noto Sans TC", sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  /* Stop iOS rubber-banding the whole page while panning the map. */
+  overscroll-behavior: none;
+}
+
+#app { height: 100%; display: grid; }
+
+#map { width: 100%; height: 100%; }
+
+/* ---------- toolbar ---------- */
+
+#toolbar {
+  height: var(--toolbar-h);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+#toolbar .title { font-weight: 600; margin-right: 4px; }
+#toolbar .spacer { flex: 1; }
+
+button, select {
+  font: inherit;
+  color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 12px;
+  min-height: 38px;
+  cursor: pointer;
+}
+
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.icon { padding: 6px 9px; min-height: 34px; }
+button.danger { color: var(--danger); }
+
+/* ---------- panel ---------- */
+
+#panel {
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.panel-tabs { display: flex; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--surface); z-index: 1; }
+.panel-tabs button { flex: 1; border: 0; border-radius: 0; border-bottom: 2px solid transparent; }
+.panel-tabs button[aria-selected="true"] { border-bottom-color: var(--accent); color: var(--accent); font-weight: 600; }
+
+.panel-body { padding: 12px; }
+
+.empty { color: var(--muted); padding: 24px 12px; text-align: center; }
+
+.doc { border: 1px solid var(--line); border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
+.doc-head { display: flex; align-items: center; gap: 6px; padding: 8px 10px; background: #fafbfc; border-bottom: 1px solid var(--line); }
+.doc-head .name { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.doc-head .tag { font-size: 11px; color: var(--muted); text-transform: uppercase; }
+
+.item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; min-height: 44px; cursor: pointer; }
+.item + .item { border-top: 1px solid #f0f2f4; }
+.item.selected { background: #eef3fe; }
+.item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item .meta { color: var(--muted); font-size: 12px; }
+.item input[type="color"] { width: 26px; height: 26px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: none; }
+.item input[type="checkbox"] { width: 18px; height: 18px; }
+
+.section-label { font-size: 12px; color: var(--muted); padding: 6px 10px 2px; }
+
+dl.stats { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; }
+dl.stats dt { color: var(--muted); }
+dl.stats dd { margin: 0; }
+
+/* ---------- toasts ---------- */
+
+#toasts { position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px; z-index: 20; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
+.toast { background: #1f2933; color: #fff; padding: 9px 14px; border-radius: 999px; max-width: min(92vw, 520px); box-shadow: 0 4px 16px rgba(0,0,0,.25); }
+.toast.error { background: var(--danger); }
+
+/* ---------- layout: desktop ---------- */
+
+@media (min-width: 768px) {
+  #app {
+    grid-template-columns: var(--panel-w) 1fr;
+    grid-template-rows: var(--toolbar-h) 1fr;
+    grid-template-areas: "toolbar toolbar" "panel map";
+  }
+  #toolbar { grid-area: toolbar; }
+  #panel { grid-area: panel; }
+  #map { grid-area: map; }
+}
+
+/* ---------- layout: mobile bottom sheet ---------- */
+
+@media (max-width: 767px) {
+  #app { grid-template-rows: var(--toolbar-h) 1fr; grid-template-areas: "toolbar" "map"; }
+  #toolbar { grid-area: toolbar; }
+  #map { grid-area: map; }
+  #panel {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: 62vh;
+    border-right: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -6px 24px rgba(0,0,0,.16);
+    transform: translateY(calc(100% - 0px));
+    transition: transform .22s ease;
+    z-index: 10;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  #panel.open { transform: translateY(0); }
+
+  /* The toolbar scrolls horizontally, so the sheet toggle must not live in it. */
+  .sheet-toggle {
+    position: fixed;
+    right: 12px;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    z-index: 11;
+    border-radius: 999px;
+    padding: 10px 18px;
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .22);
+  }
+
+  body.sheet-open .sheet-toggle { bottom: calc(62vh + 12px); }
+
+  #toolbar .title { display: none; }
+  #toolbar select { max-width: 42vw; }
+  #toasts { bottom: 76px; }
+}
+
+@media (min-width: 768px) {
+  .sheet-toggle { display: none; }
+}
