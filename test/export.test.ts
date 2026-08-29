@@ -31,7 +31,7 @@ const doc: Doc = {
   ],
 }
 
-const state: AppState = { docs: [doc], selection: null, basemapId: 'osm', customBasemapUrl: null, layers: [], editing: false, terrain: false, showWaypoints: true, showWaypointLabels: true, vertex: null }
+const state: AppState = { docs: [doc], selection: null, basemapId: 'osm', customBasemapUrl: null, layers: [], editing: false, terrain: false, showWaypoints: true, showWaypointLabels: true, imageOverlays: false, vertex: null }
 
 async function textOf(scope: 'all' | 'visible' | 'selection', format: 'gpx' | 'geojson' = 'gpx') {
   const result = await buildExport(state, { format, scope, filename: 'out' })
@@ -66,7 +66,7 @@ describe('buildExport', () => {
   })
 
   it('refuses to build an empty export', async () => {
-    const empty: AppState = { docs: [], selection: null, basemapId: 'osm', customBasemapUrl: null, layers: [], editing: false, terrain: false, showWaypoints: true, showWaypointLabels: true, vertex: null }
+    const empty: AppState = { docs: [], selection: null, basemapId: 'osm', customBasemapUrl: null, layers: [], editing: false, terrain: false, showWaypoints: true, showWaypointLabels: true, imageOverlays: false, vertex: null }
     await expect(buildExport(empty, { format: 'gpx', scope: 'all', filename: 'x' })).rejects.toThrow()
   })
 
@@ -105,5 +105,15 @@ describe('export scope "selection"', () => {
     await expect(
       buildExport(state, { format: 'gpx', scope: 'selection', filename: 'x' }),
     ).rejects.toThrow('尚未選取任何項目')
+  })
+})
+
+describe('image overlays default to off', () => {
+  it('still exports an overlay a file brought, so the switch only affects display', async () => {
+    const result = await buildExport(
+      { ...state, imageOverlays: false },
+      { format: 'kml', scope: 'all', filename: 'x' },
+    )
+    expect(await result.blob.text()).toContain('疊圖')
   })
 })

@@ -39,6 +39,7 @@ export function syncOverlayLayers(map: MLMap, state: AppState): void {
       existing.setCoordinates(coordsOf(overlay))
       map.setPaintProperty(lyrId, 'raster-opacity', overlay.opacity)
     }
-    map.setLayoutProperty(lyrId, 'visibility', overlay.visible ? 'visible' : 'none')
+    const on = state.imageOverlays && overlay.visible
+    map.setLayoutProperty(lyrId, 'visibility', on ? 'visible' : 'none')
   }
 }

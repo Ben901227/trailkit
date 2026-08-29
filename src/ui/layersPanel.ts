@@ -2,6 +2,7 @@ import { BASEMAPS } from '../map/basemaps'
 import { DEFAULT_LAYER_OPACITY, TILE_CATALOG, layerFromCatalog } from '../map/tileCatalog'
 import {
   addLayers,
+  setImageOverlays,
   setShowWaypointLabels,
   setShowWaypoints,
   moveLayer,
@@ -133,9 +134,26 @@ function waypointSettings(state: AppState): HTMLElement {
   return box
 }
 
+function overlaySettings(state: AppState): HTMLElement {
+  const box = h('div.layer-section')
+  const count = state.docs.reduce((n, d) => n + d.overlays.length, 0)
+  box.append(
+    h('div.section-label', {}, '圖片疊圖'),
+    toggleRow('顯示圖片疊圖，並可拖入圖片', state.imageOverlays, setImageOverlays),
+    h(
+      'p.hint',
+      {},
+      count
+        ? `目前開啟的檔案帶有 ${count} 個圖片疊圖，打開才會顯示。`
+        : '關閉時，拖進來的圖片會被忽略，KML/KMZ 內的 GroundOverlay 也不會畫出來。',
+    ),
+  )
+  return box
+}
+
 export function renderLayersPanel(host: HTMLElement, state: AppState): void {
   clear(host)
-  host.append(basemapPicker(state), waypointSettings(state))
+  host.append(basemapPicker(state), waypointSettings(state), overlaySettings(state))
 
   const stack = h('div.layer-section')
   stack.append(h('div.section-label', {}, `疊加圖層 (${state.layers.length})`))

@@ -12,6 +12,7 @@ const initial: AppState = {
   terrain: false,
   showWaypoints: true,
   showWaypointLabels: true,
+  imageOverlays: false,
   vertex: null,
 }
 
@@ -83,6 +84,10 @@ export function setShowWaypoints(showWaypoints: boolean): void {
 
 export function setShowWaypointLabels(showWaypointLabels: boolean): void {
   update((s) => ({ ...s, showWaypointLabels }))
+}
+
+export function setImageOverlays(imageOverlays: boolean): void {
+  update((s) => ({ ...s, imageOverlays }))
 }
 
 /** Show or hide every waypoint in one document at once. */

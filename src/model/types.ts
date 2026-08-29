@@ -100,6 +100,11 @@ export interface AppState {
   showWaypoints: boolean
   /** Draw waypoint names next to their markers. */
   showWaypointLabels: boolean
+  /**
+   * Image overlays — dropped pictures and KML GroundOverlays — off by default.
+   * Files still keep theirs, so turning this on brings them back.
+   */
+  imageOverlays: boolean
   /** Index of the point being worked on inside the selected track. */
   vertex: number | null
 }

@@ -9,6 +9,7 @@ interface Saved {
   layers: TileLayer[]
   showWaypoints?: boolean
   showWaypointLabels?: boolean
+  imageOverlays?: boolean
 }
 
 /**
@@ -23,6 +24,7 @@ export function saveLayerPreferences(state: AppState): void {
     layers: state.layers,
     showWaypoints: state.showWaypoints,
     showWaypointLabels: state.showWaypointLabels,
+    imageOverlays: state.imageOverlays,
   }
   try {
     localStorage.setItem(KEY, JSON.stringify(payload))
@@ -52,5 +54,6 @@ export function loadLayerPreferences(): void {
     layers,
     showWaypoints: saved.showWaypoints ?? s.showWaypoints,
     showWaypointLabels: saved.showWaypointLabels ?? s.showWaypointLabels,
+    imageOverlays: saved.imageOverlays ?? s.imageOverlays,
   }))
 }

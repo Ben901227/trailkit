@@ -73,6 +73,10 @@ function fitAll(): void {
 /** Images are not a file format to parse — they are placed on the map. */
 function openImages(images: File[]): boolean {
   if (!images.length || !map) return false
+  if (!getState().imageOverlays) {
+    toast(`已忽略 ${images.length} 張圖片：圖片疊圖預設關閉，可在「圖層」面板開啟`, 'error')
+    return false
+  }
   const box = hooks.viewportBounds()
   if (!box) return false
   const overlays = images.map((file) => overlayFromImage(file, box))
@@ -92,6 +96,11 @@ async function openFiles(all: File[]): Promise<void> {
   for (const err of errors) toast(`${err.name}：${err.message}`, 'error')
 
   for (const warning of results.flatMap((r) => r.warnings)) toast(warning)
+
+  const overlaysFound = results.reduce((n, r) => n + r.doc.overlays.length, 0)
+  if (overlaysFound && !getState().imageOverlays) {
+    toast(`檔案內有 ${overlaysFound} 個圖片疊圖，可在「圖層」面板開啟顯示`)
+  }
 
   const skipped = results.flatMap((r) => r.skipped)
   if (skipped.length) {
