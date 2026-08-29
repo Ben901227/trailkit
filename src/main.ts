@@ -15,6 +15,7 @@ import { addDocs, addLayers, getState, setSelection, subscribe } from './model/s
 import { selectionKey, type AppState, type Selection } from './model/types'
 import { installVertexTool } from './edit/vertexTool'
 import { openExportDialog } from './ui/exportDialog'
+import { openMergeDialog } from './ui/mergeDialog'
 import { renderPanel, setTab, togglePanel } from './ui/panel'
 import { initDropZone } from './ui/dropZone'
 import { initToasts, toast } from './ui/toasts'
@@ -99,6 +100,7 @@ function render(state: AppState): void {
   renderToolbar(toolbarEl, state, {
     openFiles: (files) => void openFiles(files),
     exportDocs: openExportDialog,
+    mergeTracks: openMergeDialog,
     fitAll,
     togglePanel: () => togglePanel(panelEl),
     openLayers: () => {

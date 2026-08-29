@@ -250,3 +250,14 @@ input.text {
 
 button:disabled { opacity: .4; cursor: default; }
 button:disabled:hover { border-color: var(--line); }
+
+/* ---------- merge dialog ---------- */
+
+.merge-list { max-height: 44vh; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; }
+.merge-row { display: flex; align-items: center; gap: 6px; padding: 6px 8px; min-height: 44px; }
+.merge-row + .merge-row { border-top: 1px solid #f0f2f4; }
+.merge-row.chosen { background: #eef3fe; }
+.merge-row .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.merge-row input[type="checkbox"] { width: 18px; height: 18px; }
+.merge-row button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.modal .hint { color: var(--muted); font-size: 12px; margin: 10px 0 0; }

@@ -5,6 +5,7 @@ import { clear, h } from './dom'
 
 export interface ToolbarHooks {
   exportDocs: () => void
+  mergeTracks: () => void
   openLayers: () => void
   openFiles: (files: File[]) => void
   fitAll: () => void
@@ -35,6 +36,7 @@ export function renderToolbar(host: HTMLElement, state: AppState, hooks: Toolbar
     h('span.title', {}, 'GPX / KML'),
     h('button.primary', { onclick: () => input.click() }, '開啟檔案'),
     input,
+    h('button', { onclick: hooks.mergeTracks, title: '合併多條軌跡' }, '合併'),
     h('button', { onclick: hooks.exportDocs, title: '匯出檔案' }, '匯出'),
     undoBtn,
     redoBtn,
