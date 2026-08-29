@@ -90,6 +90,8 @@ async function openFiles(all: File[]): Promise<void> {
   const { results, errors } = await loadFiles(files)
   for (const err of errors) toast(`${err.name}：${err.message}`, 'error')
 
+  for (const warning of results.flatMap((r) => r.warnings)) toast(warning)
+
   const skipped = results.flatMap((r) => r.skipped)
   if (skipped.length) {
     const more = skipped.length > 1 ? `，另有 ${skipped.length - 1} 項` : ''

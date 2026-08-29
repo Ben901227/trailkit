@@ -8,6 +8,8 @@ export interface ParseResult {
   /** Raster layers the file defined; these join the shared layer stack. */
   tiles: TileLayer[]
   skipped: string[]
+  /** Things the reader worked around, worth telling the user about. */
+  warnings: string[]
 }
 
 function build(name: string, format: Doc['sourceFormat'], n: Normalized): ParseResult {
@@ -22,6 +24,7 @@ function build(name: string, format: Doc['sourceFormat'], n: Normalized): ParseR
     },
     tiles: [],
     skipped: n.skipped,
+    warnings: [],
   }
 }
 

@@ -1,19 +1,52 @@
 import { detectFormat } from './detect'
+import { declareMissingNamespaces } from './xmlRepair'
 import { geoJsonToDoc } from './parseGeoJson'
 import { gpxToDoc, type ParseResult } from './parseGpx'
 import { kmlToDoc } from './parseKml'
 
-/** Browser XML parsing, with the silent-failure mode of DOMParser turned into an error. */
-export function parseXml(text: string): Document {
-  const doc = new DOMParser().parseFromString(text, 'application/xml')
+function parseError(doc: Document): string | null {
   const err = doc.getElementsByTagName('parsererror')[0]
-  if (err) throw new Error(err.textContent?.trim().split('\n')[0] ?? 'Malformed XML')
-  return doc
+  if (!err) return null
+  return err.textContent?.trim().split('\n')[0] ?? 'Malformed XML'
+}
+
+/** Set by the last parseXml call, so the caller can report the repair. */
+let lastRepair: string[] = []
+
+/**
+ * Browser XML parsing. DOMParser reports failure as a document rather than an
+ * exception, and rejects a file outright over an undeclared namespace prefix —
+ * which several GPS apps emit — so a failed parse is retried on a repaired copy.
+ */
+export function parseXml(text: string): Document {
+  lastRepair = []
+  const first = new DOMParser().parseFromString(text, 'application/xml')
+  const error = parseError(first)
+  if (!error) return first
+
+  const repaired = declareMissingNamespaces(text)
+  if (!repaired.declared.length) throw new Error(error)
+
+  const second = new DOMParser().parseFromString(repaired.text, 'application/xml')
+  const stillBroken = parseError(second)
+  if (stillBroken) throw new Error(stillBroken)
+
+  lastRepair = repaired.declared
+  return second
 }
 
 export interface LoadOutcome {
   results: ParseResult[]
   errors: { name: string; message: string }[]
+}
+
+function withRepairNote(result: ParseResult, repaired: string[]): ParseResult {
+  if (repaired.length) {
+    result.warnings.push(
+      `XML 少了 ${repaired.map((p) => `xmlns:${p}`).join('、')} 的宣告，已自動補上後讀取`,
+    )
+  }
+  return result
 }
 
 async function loadOne(file: File): Promise<ParseResult> {
@@ -29,12 +62,17 @@ async function loadOne(file: File): Promise<ParseResult> {
   }
 
   const text = new TextDecoder().decode(bytes)
-  if (format === 'gpx') return gpxToDoc(parseXml(text), file.name)
+  if (format === 'gpx') {
+    const xml = parseXml(text)
+    return withRepairNote(gpxToDoc(xml, file.name), lastRepair)
+  }
   if (format === 'kml') {
+    const xml = parseXml(text)
     // Plain KML can only reference overlay images by URL.
-    return kmlToDoc(parseXml(text), file.name, (href) =>
+    const result = kmlToDoc(xml, file.name, (href) =>
       /^https?:/i.test(href) ? { url: href } : null,
     )
+    return withRepairNote(result, lastRepair)
   }
   if (format === 'geojson') return geoJsonToDoc(text, file.name)
   throw new Error('Unrecognised format — expected GPX, KML, KMZ or GeoJSON')
