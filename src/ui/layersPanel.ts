@@ -13,6 +13,7 @@ import {
 } from '../model/store'
 import type { AppState, TileLayer } from '../model/types'
 import { clear, h } from './dom'
+import { icon } from './icons'
 import { keepAlive } from './panelLock'
 import { toast } from './toasts'
 
@@ -65,18 +66,18 @@ function layerRow(layer: TileLayer, index: number, total: number): HTMLElement {
   const up = h('button.icon', {
     title: '上移一層',
     onclick: () => moveLayer(layer.id, 1),
-  }, '▲') as HTMLButtonElement
+  }, icon('chevronUp')) as HTMLButtonElement
   up.disabled = index === total - 1
 
   const down = h('button.icon', {
     title: '下移一層',
     onclick: () => moveLayer(layer.id, -1),
-  }, '▼') as HTMLButtonElement
+  }, icon('chevronDown')) as HTMLButtonElement
   down.disabled = index === 0
 
   row.append(
     h('div.layer-head', {}, check, h('span.name', { title: layer.origin }, layer.name), up, down,
-      h('button.icon.danger', { title: '移除圖層', onclick: () => removeLayer(layer.id) }, '✕')),
+      h('button.icon.danger', { title: '移除圖層', onclick: () => removeLayer(layer.id) }, icon('close'))),
     h('div.layer-controls', {}, slider, readout),
   )
   return row

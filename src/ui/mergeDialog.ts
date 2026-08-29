@@ -3,6 +3,7 @@ import { concatIntoDoc, joinGaps, mergeIntoDoc, resolveRefs, type TrackRef } fro
 import { formatDistance } from '../model/stats'
 import { getState, setDocs } from '../model/store'
 import { h } from './dom'
+import { icon } from './icons'
 import { toast } from './toasts'
 
 interface Row extends TrackRef {
@@ -87,19 +88,19 @@ export function openMergeDialog(): void {
         title: '反轉這條的方向',
         onclick: () => {
           row.reversed = !row.reversed
-          reverse.textContent = row.reversed ? '⇄' : '→'
+          reverse.replaceChildren(icon(row.reversed ? 'swap' : 'arrowRight'))
           reverse.classList.toggle('on', row.reversed)
           updateSummary()
         },
-      }, row.reversed ? '⇄' : '→') as HTMLButtonElement
+      }, icon(row.reversed ? 'swap' : 'arrowRight')) as HTMLButtonElement
       reverse.classList.toggle('on', row.reversed)
 
       item.append(
         check,
         h('span.name', { title: row.label }, row.label),
         reverse,
-        h('button.icon', { title: '上移', onclick: () => move(index, -1) }, '▲'),
-        h('button.icon', { title: '下移', onclick: () => move(index, 1) }, '▼'),
+        h('button.icon', { title: '上移', onclick: () => move(index, -1) }, icon('chevronUp')),
+        h('button.icon', { title: '下移', onclick: () => move(index, 1) }, icon('chevronDown')),
       )
       list.append(item)
     })

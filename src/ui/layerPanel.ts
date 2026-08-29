@@ -12,6 +12,7 @@ import { formatDistance, trackStats } from '../model/stats'
 import type { AppState, Selection } from '../model/types'
 import { selectionKey } from '../model/types'
 import { CAMERA_HINT, clear, h } from './dom'
+import { icon } from './icons'
 
 export interface PanelHooks {
   zoomTo: (sel: Selection) => void
@@ -110,13 +111,13 @@ function itemRow(
     h(
       'button.icon',
       {
-        title: '縮放到此圖層',
+        title: '縮放到此項目',
         onclick: (e: Event) => {
           e.stopPropagation()
           hooks.zoomTo(sel)
         },
       },
-      '⤢',
+      icon('expand'),
     ),
   )
   return row
@@ -174,7 +175,7 @@ export function renderLayerPanel(host: HTMLElement, state: AppState, hooks: Pane
             renderLayerPanel(host, state, hooks)
           },
         },
-        h('span.caret', {}, open ? '▾' : '▸'),
+        h('span.caret', {}, icon(open ? 'chevronDown' : 'chevronRight', 14)),
         h('span.name', { title: doc.name }, doc.name),
         h('span.tag', {}, `${itemCount} 項`),
         h(
@@ -188,7 +189,7 @@ export function renderLayerPanel(host: HTMLElement, state: AppState, hooks: Pane
               setDocOverlaysVisible(doc.id, !anyVisible)
             },
           },
-          anyVisible ? '◉' : '◌',
+          icon(anyVisible ? 'eye' : 'eyeOff'),
         ),
         h(
           'button.icon',
@@ -199,7 +200,7 @@ export function renderLayerPanel(host: HTMLElement, state: AppState, hooks: Pane
               hooks.exportDoc(doc.id, doc.name)
             },
           },
-          '↓',
+          icon('download'),
         ),
         h(
           'button.icon.danger',

@@ -2,6 +2,7 @@ import { canRedo, canUndo, redo, undo } from '../model/history'
 import { setEditing, setTerrain } from '../model/store'
 import type { AppState } from '../model/types'
 import { clear, h } from './dom'
+import { icon } from './icons'
 
 export interface ToolbarHooks {
   exportDocs: () => void
@@ -27,8 +28,8 @@ export function renderToolbar(host: HTMLElement, state: AppState, hooks: Toolbar
     input.value = ''
   })
 
-  const undoBtn = h('button.icon', { title: '復原 (⌘Z)', onclick: () => undo() }, '↶')
-  const redoBtn = h('button.icon', { title: '重做 (⇧⌘Z)', onclick: () => redo() }, '↷')
+  const undoBtn = h('button.icon', { title: '復原 (⌘Z)', onclick: () => undo() }, icon('undo'))
+  const redoBtn = h('button.icon', { title: '重做 (⇧⌘Z)', onclick: () => redo() }, icon('redo'))
   ;(undoBtn as HTMLButtonElement).disabled = !canUndo()
   ;(redoBtn as HTMLButtonElement).disabled = !canRedo()
 

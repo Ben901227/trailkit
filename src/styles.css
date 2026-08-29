@@ -57,7 +57,20 @@ button, select {
 
 button:hover { border-color: var(--accent); }
 button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-button.icon { padding: 6px 9px; min-height: 34px; }
+button.icon {
+  padding: 0;
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+button.icon:hover { color: var(--ink); }
+button.icon.danger { color: var(--danger); }
+button.icon:disabled { color: var(--line); }
+button.icon svg { display: block; }
 button.danger { color: var(--danger); }
 
 /* ---------- panel ---------- */
@@ -224,7 +237,7 @@ input.text {
 .panel-body input[type="range"] { width: 100%; }
 
 .doc-head { cursor: pointer; user-select: none; }
-.doc-head .caret { color: var(--muted); width: 12px; }
+.doc-head .caret { color: var(--muted); display: inline-flex; align-items: center; }
 
 /* ---------- layers panel ---------- */
 
