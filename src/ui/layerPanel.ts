@@ -3,7 +3,7 @@ import { removeDoc, setSelection, setTrackColor, setVisible } from '../model/sto
 import { formatDistance, trackStats } from '../model/stats'
 import type { AppState, Selection } from '../model/types'
 import { selectionKey } from '../model/types'
-import { clear, h } from './dom'
+import { CAMERA_HINT, clear, h } from './dom'
 
 export interface PanelHooks {
   zoomTo: (sel: Selection) => void
@@ -98,6 +98,7 @@ export function renderLayerPanel(host: HTMLElement, state: AppState, hooks: Pane
         {},
         '尚未開啟檔案。點上方「開啟檔案」，或把 GPX / KML / KMZ / 圖片拖進來。',
       ),
+      h('p.hint', {}, CAMERA_HINT),
     )
     return
   }

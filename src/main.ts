@@ -15,6 +15,7 @@ import { loadLayerPreferences, saveLayerPreferences } from './model/persist'
 import { loadSession, saveSession } from './model/session'
 import { addDocs, addLayers, getState, setSelection, subscribe } from './model/store'
 import { selectionKey, type AppState, type Selection } from './model/types'
+import { installCameraTool } from './edit/cameraTool'
 import { installVertexTool } from './edit/vertexTool'
 import { openExportDialog } from './ui/exportDialog'
 import { openMergeDialog } from './ui/mergeDialog'
@@ -226,6 +227,7 @@ function start(): void {
   // Handy for poking at the map from the dev console; never shipped.
   if (import.meta.env.DEV) (window as unknown as Record<string, unknown>)['__map'] = map
 
+  installCameraTool(map)
   installVertexTool(map)
   loadLayerPreferences()
   void restoreSession()

@@ -138,6 +138,8 @@ export function createMap(container: HTMLElement, basemapId: string): MLMap {
     center: [121.0, 23.7],
     zoom: 6,
     attributionControl: { compact: true },
+    // Google Earth tilts well past MapLibre's default 60° ceiling.
+    maxPitch: 85,
     // Keep pinch-rotate; it is the gesture that makes the 3D view usable later.
     pitchWithRotate: true,
   })

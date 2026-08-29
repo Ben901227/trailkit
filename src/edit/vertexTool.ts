@@ -1,4 +1,5 @@
 import type { Map as MLMap, MapMouseEvent, MapTouchEvent } from 'maplibre-gl'
+import { isCameraModifier } from './cameraTool'
 import { insertPoint, moveOverlay, moveOverlayCorner, movePoint, updateWaypoint } from '../model/commands'
 import { checkpoint, checkpointCoalesced } from '../model/history'
 import { nearestOnLine } from '../model/geometry'
@@ -58,6 +59,7 @@ export function installVertexTool(map: MLMap): void {
   const positionOf = (e: PointerEventLike): [number, number] => [e.lngLat.lng, e.lngLat.lat]
 
   const beginVertexDrag = (e: PointerEventLike) => {
+    if (isCameraModifier(e.originalEvent)) return
     const state = getState()
     const sel = selectedTrack()
     if (!state.editing || !sel) return
@@ -80,6 +82,7 @@ export function installVertexTool(map: MLMap): void {
   }
 
   const beginWaypointDrag = (e: PointerEventLike) => {
+    if (isCameraModifier(e.originalEvent)) return
     const state = getState()
     if (!state.editing) return
     const feature = map.queryRenderedFeatures(e.point, { layers: ['waypoint-hit'] })[0]
@@ -104,6 +107,7 @@ export function installVertexTool(map: MLMap): void {
 
   /** Corner handles, and dragging the image body itself. */
   const beginOverlayDrag = (e: PointerEventLike) => {
+    if (isCameraModifier(e.originalEvent)) return
     const state = getState()
     const sel = state.selection
     if (!state.editing || sel?.kind !== 'overlay') return

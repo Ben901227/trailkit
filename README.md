@@ -28,6 +28,17 @@ npm run build    # 型別檢查 + 產生 dist/
 - [x] 3D 地形檢視（AWS Open Data terrarium DEM）
 - [x] 工作階段還原：開啟的檔案存在 IndexedDB，重開自動還原
 
+## 地圖操作
+
+| 操作 | 動作 |
+|---|---|
+| 拖曳 | 平移 |
+| **Shift** 或 **⌘**（Windows 為 **Ctrl**）+ 拖曳 | 旋轉與傾斜視角，同 Google Earth |
+| 滾輪 / 雙指 | 縮放 |
+| 雙指旋轉 | 旋轉與傾斜（觸控） |
+
+Shift + 拖曳原本是 MapLibre 的框選縮放，已關閉以讓位給這個手勢。
+
 ## 存在瀏覽器裡的東西
 
 - **localStorage**：底圖與疊加圖層清單（含順序、透明度）。

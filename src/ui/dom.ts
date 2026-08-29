@@ -34,3 +34,6 @@ export function h<K extends keyof HTMLElementTagNameMap>(
 export function clear(el: HTMLElement): void {
   while (el.firstChild) el.removeChild(el.firstChild)
 }
+
+/** The one gesture nobody guesses; shown wherever a panel would be empty. */
+export const CAMERA_HINT = '拖曳平移地圖；按住 Shift 或 ⌘（Windows 為 Ctrl）拖曳可旋轉與傾斜視角。'

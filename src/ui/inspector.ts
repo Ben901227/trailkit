@@ -2,7 +2,7 @@ import { formatDistance, formatTime, trackStats } from '../model/stats'
 import { update } from '../model/store'
 import type { AppState } from '../model/types'
 import { findOverlay, findTrack, findWaypoint } from '../model/types'
-import { clear, h } from './dom'
+import { CAMERA_HINT, clear, h } from './dom'
 import type { PanelHooks } from './layerPanel'
 import { overlayActions, trackActions, waypointActions } from './trackEditor'
 
@@ -31,7 +31,10 @@ export function renderInspector(host: HTMLElement, state: AppState, hooks: Panel
   clear(host)
   const sel = state.selection
   if (!sel) {
-    host.append(h('div.empty', {}, '在地圖或圖層清單選一個項目，這裡會顯示它的資訊。'))
+    host.append(
+      h('div.empty', {}, '在地圖或圖層清單選一個項目，這裡會顯示它的資訊。'),
+      h('p.hint', {}, CAMERA_HINT),
+    )
     return
   }
 
