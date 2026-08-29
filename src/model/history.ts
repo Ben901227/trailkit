@@ -1,5 +1,5 @@
 import { getState, update } from './store'
-import type { Doc } from './types'
+import type { AppState, Doc, Selection } from './types'
 
 interface Entry {
   label: string
@@ -54,22 +54,47 @@ export function canRedo(): boolean {
   return redoStack.length > 0
 }
 
-export function undo(): string | null {
-  const entry = undoStack.pop()
-  if (!entry) return null
-  redoStack.push({ label: entry.label, docs: getState().docs })
-  update((s) => ({ ...s, docs: entry.docs, selection: null }))
+/** Keep the selection if it still points at something; drop it otherwise. */
+function surviving(docs: Doc[], selection: Selection | null): Selection | null {
+  if (!selection) return null
+  const doc = docs.find((d) => d.id === selection.docId)
+  if (!doc) return null
+  const lists = {
+    track: doc.tracks,
+    waypoint: doc.waypoints,
+    overlay: doc.overlays,
+    tile: doc.tiles,
+  } as const
+  return lists[selection.kind].some((item) => item.id === selection.id) ? selection : null
+}
+
+function applyEntry(entry: Entry, into: Entry[]): string {
+  into.push({ label: entry.label, docs: getState().docs })
+  update((s: AppState) => {
+    const selection = surviving(entry.docs, s.selection)
+    // The restored track may be shorter than it was when the point was picked.
+    const track =
+      selection?.kind === 'track'
+        ? entry.docs
+            .find((d) => d.id === selection.docId)
+            ?.tracks.find((t) => t.id === selection.id)
+        : undefined
+    const inRange =
+      s.vertex !== null && track !== undefined && s.vertex < track.geometry.coordinates.length
+    return { ...s, docs: entry.docs, selection, vertex: inRange ? s.vertex : null }
+  })
   notify()
   return entry.label
 }
 
+export function undo(): string | null {
+  const entry = undoStack.pop()
+  return entry ? applyEntry(entry, redoStack) : null
+}
+
 export function redo(): string | null {
   const entry = redoStack.pop()
-  if (!entry) return null
-  undoStack.push({ label: entry.label, docs: getState().docs })
-  update((s) => ({ ...s, docs: entry.docs, selection: null }))
-  notify()
-  return entry.label
+  return entry ? applyEntry(entry, undoStack) : null
 }
 
 export function clearHistory(): void {
