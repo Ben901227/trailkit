@@ -1,9 +1,9 @@
 import type { Map as MLMap, MapMouseEvent, MapTouchEvent } from 'maplibre-gl'
-import { insertPoint, movePoint, updateWaypoint } from '../model/commands'
+import { insertPoint, moveOverlay, moveOverlayCorner, movePoint, updateWaypoint } from '../model/commands'
 import { checkpoint, checkpointCoalesced } from '../model/history'
 import { nearestOnLine } from '../model/geometry'
 import { getState, setDocs, setSelection, setVertex } from '../model/store'
-import { selectionKey, type Selection } from '../model/types'
+import { selectionKey, type AppState, type Selection } from '../model/types'
 
 type PointerEventLike = MapMouseEvent | MapTouchEvent
 
@@ -11,14 +11,34 @@ type PointerEventLike = MapMouseEvent | MapTouchEvent
 const TAP_SLOP = 4
 
 interface Drag {
-  kind: 'vertex' | 'waypoint'
-  /** Vertex index, or waypoint id. */
+  kind: 'vertex' | 'waypoint' | 'corner' | 'overlay'
+  /** Vertex/corner index, or waypoint/overlay id. */
   ref: number | string
   docId: string
   trackId: string
   startPoint: { x: number; y: number }
+  /** Map position where the drag started, for delta-based moves. */
+  startLngLat: [number, number]
   moved: boolean
   label: string
+}
+
+/** Point-in-quad test, so dragging the image body only starts over the image. */
+function insideOverlay(state: AppState, sel: Selection, point: [number, number]): boolean {
+  const overlay = state.docs
+    .find((d) => d.id === sel.docId)
+    ?.overlays.find((o) => o.id === sel.id)
+  if (!overlay) return false
+  const [x, y] = point
+  let inside = false
+  const corners = overlay.corners
+  for (let i = 0, j = corners.length - 1; i < corners.length; j = i++) {
+    const [xi, yi] = corners[i] as [number, number]
+    const [xj, yj] = corners[j] as [number, number]
+    const crosses = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi
+    if (crosses) inside = !inside
+  }
+  return inside
 }
 
 function selectedTrack(): Selection | null {
@@ -53,6 +73,7 @@ export function installVertexTool(map: MLMap): void {
       docId: sel.docId,
       trackId: sel.id,
       startPoint: { x: e.point.x, y: e.point.y },
+      startLngLat: positionOf(e),
       moved: false,
       label: `移動點 ${index + 1}`,
     }
@@ -75,8 +96,34 @@ export function installVertexTool(map: MLMap): void {
       docId,
       trackId: '',
       startPoint: { x: e.point.x, y: e.point.y },
+      startLngLat: positionOf(e),
       moved: false,
       label: '移動點位',
+    }
+  }
+
+  /** Corner handles, and dragging the image body itself. */
+  const beginOverlayDrag = (e: PointerEventLike) => {
+    const state = getState()
+    const sel = state.selection
+    if (!state.editing || sel?.kind !== 'overlay') return
+
+    const corner = map.queryRenderedFeatures(e.point, { layers: ['corner-hit'] })[0]
+    const index = corner?.properties?.['index']
+    const onCorner = typeof index === 'number'
+    if (!onCorner && !insideOverlay(state, sel, positionOf(e))) return
+
+    e.preventDefault()
+    map.dragPan.disable()
+    drag = {
+      kind: onCorner ? 'corner' : 'overlay',
+      ref: onCorner ? (index as number) : sel.id,
+      docId: sel.docId,
+      trackId: sel.id,
+      startPoint: { x: e.point.x, y: e.point.y },
+      startLngLat: positionOf(e),
+      moved: false,
+      label: onCorner ? `校正疊圖角點 ${(index as number) + 1}` : '移動疊圖',
     }
   }
 
@@ -90,11 +137,19 @@ export function installVertexTool(map: MLMap): void {
     // Coalesce the whole drag into one undo step.
     checkpointCoalesced(drag.label)
     const docs = getState().docs
-    setDocs(
-      drag.kind === 'vertex'
-        ? movePoint(docs, drag.docId, drag.trackId, drag.ref as number, positionOf(e))
-        : updateWaypoint(docs, drag.docId, drag.ref as string, { position: positionOf(e) }),
-    )
+    const to = positionOf(e)
+    if (drag.kind === 'vertex') {
+      setDocs(movePoint(docs, drag.docId, drag.trackId, drag.ref as number, to))
+    } else if (drag.kind === 'waypoint') {
+      setDocs(updateWaypoint(docs, drag.docId, drag.ref as string, { position: to }))
+    } else if (drag.kind === 'corner') {
+      setDocs(moveOverlayCorner(docs, drag.docId, drag.trackId, drag.ref as number, to))
+    } else {
+      // The image moves by the delta since the last frame, not to the cursor.
+      const delta: [number, number] = [to[0] - drag.startLngLat[0], to[1] - drag.startLngLat[1]]
+      drag.startLngLat = to
+      setDocs(moveOverlay(docs, drag.docId, drag.ref as string, delta))
+    }
   }
 
   const onRelease = () => {
@@ -110,8 +165,10 @@ export function installVertexTool(map: MLMap): void {
 
   map.on('mousedown', beginVertexDrag)
   map.on('mousedown', beginWaypointDrag)
+  map.on('mousedown', beginOverlayDrag)
   map.on('touchstart', beginVertexDrag)
   map.on('touchstart', beginWaypointDrag)
+  map.on('touchstart', beginOverlayDrag)
   map.on('mousemove', onMove)
   map.on('touchmove', onMove)
   map.on('mouseup', onRelease)

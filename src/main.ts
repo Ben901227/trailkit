@@ -3,11 +3,12 @@ import './styles.css'
 
 import type { Map as MLMap } from 'maplibre-gl'
 import { colorForIndex } from './io/ids'
+import { docFromOverlays, isImageFile, overlayFromImage } from './io/imageOverlay'
 import { loadFiles } from './io/loadFile'
 import { applyBasemap, createMap, fitTo } from './map/mapView'
 import { syncOverlayLayers } from './map/overlayLayers'
 import { syncTileLayers } from './map/tileLayers'
-import { syncTrackLayers, syncVertexLayer, visiblePositions } from './map/trackLayers'
+import { syncCornerLayer, syncTrackLayers, syncVertexLayer, visiblePositions } from './map/trackLayers'
 import { bounds } from './model/stats'
 import { checkpoint, onHistoryChange, redo, undo } from './model/history'
 import { loadLayerPreferences, saveLayerPreferences } from './model/persist'
@@ -47,6 +48,11 @@ const hooks = {
     const box = bounds(positionsFor(getState(), sel))
     if (box && map) fitTo(map, box)
   },
+  viewportBounds(): [number, number, number, number] | null {
+    if (!map) return null
+    const b = map.getBounds()
+    return [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]
+  },
 }
 
 function fitAll(): void {
@@ -58,7 +64,24 @@ function fitAll(): void {
   if (map) fitTo(map, box)
 }
 
-async function openFiles(files: File[]): Promise<void> {
+/** Images are not a file format to parse — they are placed on the map. */
+function openImages(images: File[]): boolean {
+  if (!images.length || !map) return false
+  const box = hooks.viewportBounds()
+  if (!box) return false
+  const overlays = images.map((file) => overlayFromImage(file, box))
+  checkpoint(`加入疊圖 ${overlays.length} 張`)
+  addDocs([docFromOverlays(overlays.length === 1 ? overlays[0]!.name : '疊圖', overlays)])
+  toast('已加入疊圖。進入編輯模式後拖曳四角校正位置。')
+  return true
+}
+
+async function openFiles(all: File[]): Promise<void> {
+  const images = all.filter(isImageFile)
+  const files = all.filter((f) => !isImageFile(f))
+  const placedImages = openImages(images)
+
+  if (!files.length) return
   const { results, errors } = await loadFiles(files)
   for (const err of errors) toast(`${err.name}：${err.message}`, 'error')
 
@@ -75,7 +98,10 @@ async function openFiles(files: File[]): Promise<void> {
   const docs = results
     .map((r) => r.doc)
     .filter((d) => d.tracks.length || d.waypoints.length || d.overlays.length)
-  if (!docs.length) return
+  if (!docs.length) {
+    if (!placedImages && !importedLayers.length) toast('檔案裡沒有可顯示的內容', 'error')
+    return
+  }
   checkpoint('開啟檔案')
 
   // Continue the palette across files so two documents don't both open in red.
@@ -119,6 +145,7 @@ function render(state: AppState): void {
   }
   syncTrackLayers(map, state)
   syncVertexLayer(map, state)
+  syncCornerLayer(map, state)
   syncTileLayers(map, state)
   syncOverlayLayers(map, state)
 }

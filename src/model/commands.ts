@@ -1,6 +1,6 @@
 import type { Position } from 'geojson'
 import { newId } from '../io/ids'
-import type { Doc, Track, Waypoint } from './types'
+import type { Doc, Overlay, Track, Waypoint } from './types'
 
 /**
  * Pure operations over the document list. Each returns a new array, sharing
@@ -200,5 +200,64 @@ export function deleteWaypoint(docs: Doc[], docId: string, id: string): Doc[] {
   return mapDoc(docs, docId, (doc) => ({
     ...doc,
     waypoints: doc.waypoints.filter((w) => w.id !== id),
+  }))
+}
+
+/* ---------- overlays ---------- */
+
+export function moveOverlayCorner(
+  docs: Doc[],
+  docId: string,
+  id: string,
+  index: number,
+  to: [number, number],
+): Doc[] {
+  return mapDoc(docs, docId, (doc) => ({
+    ...doc,
+    overlays: doc.overlays.map((o) => {
+      if (o.id !== id) return o
+      const corners = o.corners.slice()
+      corners[index] = to
+      return { ...o, corners }
+    }),
+  }))
+}
+
+/** Shift the whole image by a lng/lat delta, keeping its shape. */
+export function moveOverlay(
+  docs: Doc[],
+  docId: string,
+  id: string,
+  delta: [number, number],
+): Doc[] {
+  return mapDoc(docs, docId, (doc) => ({
+    ...doc,
+    overlays: doc.overlays.map((o) =>
+      o.id === id
+        ? {
+            ...o,
+            corners: o.corners.map(([lng, lat]) => [lng + delta[0], lat + delta[1]] as [number, number]),
+          }
+        : o,
+    ),
+  }))
+}
+
+export function patchOverlay(
+  docs: Doc[],
+  docId: string,
+  id: string,
+  patch: Partial<Pick<Overlay, 'name' | 'opacity' | 'corners' | 'visible'>>,
+): Doc[] {
+  return mapDoc(docs, docId, (doc) => ({
+    ...doc,
+    overlays: doc.overlays.map((o) => (o.id === id ? { ...o, ...patch } : o)),
+  }))
+}
+
+export function deleteOverlay(docs: Doc[], docId: string, id: string): Doc[] {
+  return mapDoc(docs, docId, (doc) => ({
+    ...doc,
+    overlays: doc.overlays.filter((o) => o.id !== id),
   }))
 }

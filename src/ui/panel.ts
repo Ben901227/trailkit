@@ -43,5 +43,5 @@ export function renderPanel(panel: HTMLElement, state: AppState, hooks: PanelHoo
 
   if (activeTab === 'files') renderLayerPanel(body, state, hooks)
   else if (activeTab === 'layers') renderLayersPanel(body, state)
-  else renderInspector(body, state)
+  else renderInspector(body, state, hooks)
 }

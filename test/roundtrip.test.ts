@@ -112,3 +112,45 @@ describe('tile layer round-trip', () => {
     expect(again.tiles[0]!.name).toBe('魯地圖')
   })
 })
+
+describe('image overlay corners', () => {
+  const quad = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">
+  <Document>
+    <GroundOverlay>
+      <name>掃描圖</name>
+      <Icon><href>files/scan.png</href></Icon>
+      <gx:LatLonQuad>
+        <coordinates>120.9,23.9 121.1,23.9 121.05,24.1 120.85,24.1</coordinates>
+      </gx:LatLonQuad>
+      <LatLonBox><north>24.1</north><south>23.9</south><east>121.1</east><west>120.85</west></LatLonBox>
+    </GroundOverlay>
+  </Document>
+</kml>`
+
+  it('prefers the quad over the bounding box, so a skewed fit survives', () => {
+    const { doc } = kmlToDoc(parse(quad), 'q.kml', () => ({ url: 'blob:x' }))
+    expect(doc.overlays[0]!.corners).toEqual([
+      [120.85, 24.1],
+      [121.05, 24.1],
+      [121.1, 23.9],
+      [120.9, 23.9],
+    ])
+  })
+
+  it('writes corners that read back unchanged', () => {
+    const first = kmlToDoc(parse(quad), 'q.kml', () => ({ url: 'blob:x' })).doc
+    const again = kmlToDoc(parse(writeKml([first], 'q')), 'q.kml', () => ({ url: 'blob:x' })).doc
+    expect(again.overlays[0]!.corners).toEqual(first.overlays[0]!.corners)
+  })
+
+  it('still reads a plain box overlay with no quad', () => {
+    const { doc } = kmlToDoc(parse(fixture('sample.kml')), 'sample.kml', () => ({ url: 'blob:x' }))
+    expect(doc.overlays[0]!.corners).toEqual([
+      [121.0, 24.2],
+      [121.2, 24.2],
+      [121.2, 24.0],
+      [121.0, 24.0],
+    ])
+  })
+})

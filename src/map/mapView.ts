@@ -5,6 +5,7 @@ export const SRC_BASEMAP = 'basemap'
 export const SRC_TRACKS = 'tracks'
 export const SRC_WAYPOINTS = 'waypoints'
 export const SRC_VERTICES = 'vertices'
+export const SRC_CORNERS = 'corners'
 
 function baseStyle(basemap: Basemap): maplibregl.StyleSpecification {
   return {
@@ -20,6 +21,7 @@ function baseStyle(basemap: Basemap): maplibregl.StyleSpecification {
       [SRC_TRACKS]: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
       [SRC_WAYPOINTS]: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
       [SRC_VERTICES]: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
+      [SRC_CORNERS]: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
     },
     layers: [
       { id: 'basemap', type: 'raster', source: SRC_BASEMAP },
@@ -91,6 +93,32 @@ function baseStyle(basemap: Basemap): maplibregl.StyleSpecification {
         type: 'line',
         source: SRC_TRACKS,
         paint: { 'line-color': '#000000', 'line-opacity': 0, 'line-width': 24 },
+      },
+      {
+        id: 'corner-outline',
+        type: 'line',
+        source: SRC_CORNERS,
+        filter: ['==', ['geometry-type'], 'LineString'],
+        paint: { 'line-color': '#2f6fed', 'line-width': 2, 'line-dasharray': [2, 2] },
+      },
+      {
+        id: 'corner-circle',
+        type: 'circle',
+        source: SRC_CORNERS,
+        filter: ['==', ['geometry-type'], 'Point'],
+        paint: {
+          'circle-radius': 8,
+          'circle-color': '#2f6fed',
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 2,
+        },
+      },
+      {
+        id: 'corner-hit',
+        type: 'circle',
+        source: SRC_CORNERS,
+        filter: ['==', ['geometry-type'], 'Point'],
+        paint: { 'circle-radius': 22, 'circle-color': '#000000', 'circle-opacity': 0 },
       },
       // Finger-sized target, drawn last so it wins hit-testing over the line.
       {

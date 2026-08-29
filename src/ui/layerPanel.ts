@@ -7,6 +7,8 @@ import { clear, h } from './dom'
 
 export interface PanelHooks {
   zoomTo: (sel: Selection) => void
+  /** Current map view as [west, south, east, north], for snapping overlays. */
+  viewportBounds: () => [number, number, number, number] | null
 }
 
 /**

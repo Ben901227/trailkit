@@ -71,6 +71,30 @@ function numByLocalName(el: Element, local: string): number | null {
   return found && Number.isFinite(value) ? value : null
 }
 
+/**
+ * gx:LatLonQuad lists corners counter-clockwise from the south-west; our
+ * model runs clockwise from the north-west.
+ */
+function quadCorners(el: Element): [number, number][] | null {
+  const quad = firstByLocalName(el, 'LatLonQuad')
+  const raw = quad ? text(quad, 'coordinates') : null
+  if (!raw) return null
+  const points = raw
+    .trim()
+    .split(/\s+/)
+    .map((pair) => pair.split(',').map(Number))
+    .filter((p) => p.length >= 2 && Number.isFinite(p[0]) && Number.isFinite(p[1]))
+    .map((p) => [p[0] as number, p[1] as number] as [number, number])
+  if (points.length !== 4) return null
+  const [sw, se, ne, nw] = points as [
+    [number, number],
+    [number, number],
+    [number, number],
+    [number, number],
+  ]
+  return [nw, ne, se, sw]
+}
+
 export interface RawOverlay {
   name: string
   /** `href` exactly as written in the KML; resolved by the caller. */
@@ -137,10 +161,26 @@ export function extractGroundOverlays(xml: Document): RawOverlay[] {
     if (!el) continue
     // A tile pyramid is handled by extractTileLayers; its Icon is a stub pixel.
     if (firstByLocalName(el, 'MapTilePyramid')) continue
-    const box = el.getElementsByTagName('LatLonBox')[0]
     const href = el.getElementsByTagName('Icon')[0]
     const hrefText = href ? text(href, 'href') : null
-    if (!box || !hrefText) continue
+    if (!hrefText) continue
+
+    // KML colour is aabbggrr; the alpha byte drives overlay opacity.
+    const colour = text(el, 'color')
+    const alphaValue = colour && colour.length === 8 ? parseInt(colour.slice(0, 2), 16) / 255 : 1
+    const opacity = Number.isFinite(alphaValue) ? alphaValue : 1
+    const overlayName = text(el, 'name') ?? `Overlay ${out.length + 1}`
+
+    // gx:LatLonQuad states the four corners outright, so prefer it: a box plus
+    // a rotation angle cannot describe a non-rectangular fit.
+    const quad = quadCorners(el)
+    if (quad) {
+      out.push({ name: overlayName, href: hrefText, corners: quad, opacity })
+      continue
+    }
+
+    const box = el.getElementsByTagName('LatLonBox')[0]
+    if (!box) continue
     const north = num(box, 'north')
     const south = num(box, 'south')
     const east = num(box, 'east')
@@ -159,16 +199,7 @@ export function extractGroundOverlays(xml: Document): RawOverlay[] {
       centre,
     )
 
-    // KML colour is aabbggrr; the alpha byte drives overlay opacity.
-    const colour = text(el, 'color')
-    const alpha = colour && colour.length === 8 ? parseInt(colour.slice(0, 2), 16) / 255 : 1
-
-    out.push({
-      name: text(el, 'name') ?? `Overlay ${out.length + 1}`,
-      href: hrefText,
-      corners,
-      opacity: Number.isFinite(alpha) ? alpha : 1,
-    })
+    out.push({ name: overlayName, href: hrefText, corners, opacity })
   }
   return out
 }

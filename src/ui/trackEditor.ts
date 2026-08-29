@@ -1,4 +1,5 @@
 import {
+  deleteOverlay,
   deletePoints,
   deleteTrack,
   deleteWaypoint,
@@ -9,6 +10,7 @@ import {
   updateWaypoint,
 } from '../model/commands'
 import { checkpoint } from '../model/history'
+import { patchOverlay } from '../model/commands'
 import { getState, setDocs, setEditing, setSelection, setVertex } from '../model/store'
 import type { AppState, Selection, Track } from '../model/types'
 import { h } from './dom'
@@ -166,6 +168,73 @@ export function waypointActions(sel: Selection & { kind: 'waypoint' }, name: str
       '刪除點位',
     ),
     h('p.hint', {}, '編輯模式下可直接拖曳地圖上的點位移動位置。'),
+  )
+  return box
+}
+
+/** Calibration controls for an image overlay. */
+export function overlayActions(
+  state: AppState,
+  sel: Selection & { kind: 'overlay' },
+  name: string,
+  viewportBounds: () => [number, number, number, number] | null,
+): HTMLElement {
+  const box = h('div.actions')
+
+  if (!state.editing) {
+    box.append(
+      h('button.primary', { onclick: () => setEditing(true) }, '進入編輯模式'),
+      h('p.hint', {}, '編輯模式下可拖曳四個藍色角點校正，或拖曳圖面整張移動。'),
+    )
+    return box
+  }
+
+  box.append(
+    h(
+      'button',
+      {
+        onclick: () => {
+          const bounds = viewportBounds()
+          if (!bounds) return
+          const [west, south, east, north] = bounds
+          act(`重設疊圖範圍：${name}`, (docs) =>
+            patchOverlay(docs, sel.docId, sel.id, {
+              corners: [
+                [west, north],
+                [east, north],
+                [east, south],
+                [west, south],
+              ],
+            }),
+          )
+        },
+      },
+      '貼齊目前畫面',
+    ),
+    h(
+      'button',
+      {
+        onclick: () => {
+          const next = window.prompt('疊圖名稱', name)
+          if (next && next !== name) {
+            act(`重新命名：${next}`, (docs) => patchOverlay(docs, sel.docId, sel.id, { name: next }))
+          }
+        },
+      },
+      '重新命名',
+    ),
+    h(
+      'button.danger',
+      {
+        onclick: () => {
+          if (!window.confirm(`刪除疊圖「${name}」？`)) return
+          act(`刪除疊圖：${name}`, (docs) => deleteOverlay(docs, sel.docId, sel.id))
+          setSelection(null)
+        },
+      },
+      '刪除疊圖',
+    ),
+    h('p.hint', {}, '拖曳角點做四角校正；四角可自由變形，不限矩形。'),
   )
   return box
 }

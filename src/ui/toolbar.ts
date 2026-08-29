@@ -19,7 +19,7 @@ export function renderToolbar(host: HTMLElement, state: AppState, hooks: Toolbar
     type: 'file',
     multiple: true,
     // Mobile pickers filter unreliably, so accept anything and sniff the content.
-    accept: '.gpx,.kml,.kmz,.geojson,.json,application/gpx+xml,application/vnd.google-earth.kml+xml',
+    accept: '.gpx,.kml,.kmz,.geojson,.json,.png,.jpg,.jpeg,image/*',
     style: 'display:none',
   }) as HTMLInputElement
   input.addEventListener('change', () => {

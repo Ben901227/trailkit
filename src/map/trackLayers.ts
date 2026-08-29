@@ -2,7 +2,7 @@ import type { Feature, FeatureCollection, Position } from 'geojson'
 import type { Map as MLMap, GeoJSONSource } from 'maplibre-gl'
 import type { AppState } from '../model/types'
 import { selectionKey } from '../model/types'
-import { SRC_TRACKS, SRC_VERTICES, SRC_WAYPOINTS } from './mapView'
+import { SRC_CORNERS, SRC_TRACKS, SRC_VERTICES, SRC_WAYPOINTS } from './mapView'
 
 export function featureKey(kind: string, docId: string, id: string): string {
   return `${kind}:${docId}:${id}`
@@ -83,6 +83,35 @@ export function syncVertexLayer(map: MLMap, state: AppState): void {
         type: 'Feature',
         geometry: { type: 'Point', coordinates: coord },
         properties: { index, active: index === state.vertex },
+      })
+    }
+  }
+  source.setData({ type: 'FeatureCollection', features })
+}
+
+/** Corner handles and outline for the overlay being calibrated. */
+export function syncCornerLayer(map: MLMap, state: AppState): void {
+  const source = map.getSource(SRC_CORNERS) as GeoJSONSource | undefined
+  if (!source) return
+
+  const sel = state.selection
+  const features: Feature[] = []
+  if (state.editing && sel?.kind === 'overlay') {
+    const overlay = state.docs
+      .find((d) => d.id === sel.docId)
+      ?.overlays.find((o) => o.id === sel.id)
+    if (overlay) {
+      features.push({
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: [...overlay.corners, overlay.corners[0]!] },
+        properties: {},
+      })
+      overlay.corners.forEach((corner, index) => {
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: corner },
+          properties: { index },
+        })
       })
     }
   }

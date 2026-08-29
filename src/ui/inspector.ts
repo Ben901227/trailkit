@@ -3,7 +3,8 @@ import { update } from '../model/store'
 import type { AppState } from '../model/types'
 import { findOverlay, findTrack, findWaypoint } from '../model/types'
 import { clear, h } from './dom'
-import { trackActions, waypointActions } from './trackEditor'
+import type { PanelHooks } from './layerPanel'
+import { overlayActions, trackActions, waypointActions } from './trackEditor'
 
 function stats(rows: [string, string][]): HTMLElement {
   const dl = h('dl.stats')
@@ -26,7 +27,7 @@ function opacitySlider(value: number, onChange: (opacity: number) => void): HTML
   return wrap
 }
 
-export function renderInspector(host: HTMLElement, state: AppState): void {
+export function renderInspector(host: HTMLElement, state: AppState, hooks: PanelHooks): void {
   clear(host)
   const sel = state.selection
   if (!sel) {
@@ -71,8 +72,13 @@ export function renderInspector(host: HTMLElement, state: AppState): void {
 
   const overlay = findOverlay(state, sel.docId, sel.id)
   if (!overlay) return
+  const [nw, , se] = overlay.corners
   host.append(
     h('h3', {}, overlay.name),
+    stats([
+      ['西北角', `${nw?.[1].toFixed(5)}, ${nw?.[0].toFixed(5)}`],
+      ['東南角', `${se?.[1].toFixed(5)}, ${se?.[0].toFixed(5)}`],
+    ]),
     opacitySlider(overlay.opacity, (opacity) => {
       update((s) => ({
         ...s,
@@ -83,5 +89,6 @@ export function renderInspector(host: HTMLElement, state: AppState): void {
         ),
       }))
     }),
+    overlayActions(state, sel, overlay.name, hooks.viewportBounds),
   )
 }
