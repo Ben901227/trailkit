@@ -1,6 +1,7 @@
 import { kml } from '@tmcw/togeojson'
 import type { Overlay } from '../model/types'
 import { DEFAULT_LAYER_OPACITY } from '../map/tileCatalog'
+import { extractNetworkLayers } from './networkLinks'
 import { newId } from './ids'
 import { normalize } from './normalize'
 import { buildDoc, type ParseResult } from './parseGpx'
@@ -215,9 +216,14 @@ export function kmlToDoc(
 ): ParseResult {
   const result = buildDoc(name, 'kml', normalize(kml(xml)))
 
+  // Raster layers arrive two ways: as tile pyramids inside a GroundOverlay,
+  // and as NetworkLinks to a remote KML pyramid. Both end up in the same stack.
+  const network = extractNetworkLayers(xml)
+  result.skipped.push(...network.unsupported)
+
   // A file like happyman_XYZ.kml defines eight alternative basemaps; showing
   // them all at once just stacks opaque tiles, so only the first starts on.
-  result.tiles = extractTileLayers(xml).map((raw, index) => ({
+  result.tiles = [...extractTileLayers(xml), ...network.layers].map((raw, index) => ({
     id: newId('tile'),
     name: raw.name,
     visible: index === 0,

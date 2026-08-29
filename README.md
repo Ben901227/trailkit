@@ -22,7 +22,8 @@ npm run build    # 型別檢查 + 產生 dist/
 - [x] 底圖切換（含自訂 XYZ 網址）與手機版 bottom sheet 版面
 - [x] 獨立「圖層」面板：跨檔案的疊加圖層清單，可調順序、透明度，選擇記在瀏覽器裡
 - [x] 內建常用圖層（魯地圖系列、林班界、中研院百年歷史地圖），不必先匯入 KML
-- [x] Google Earth 圖磚圖層（`gx:MapTilePyramid`）匯入後併入同一個圖層清單，重複網址自動略過
+- [x] Google Earth 圖磚圖層匯入後併入同一個圖層清單，重複網址自動略過：
+      支援 `gx:MapTilePyramid`，也支援 NetworkLink super-overlay（中研院百年歷史地圖、魯地圖）
 - [x] 匯出與格式互轉、undo/redo、PWA
 - [x] 航點：地圖上顯示名稱（CJK 由瀏覽器繪製，只需附帶拉丁字型）、點選跳資訊泡泡、
       每個檔案一鍵開關整組，以及全域開關（顯示航點／顯示名稱）
