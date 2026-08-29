@@ -1,5 +1,6 @@
 import type { AppState } from '../model/types'
 import { clear, h } from './dom'
+import { isPanelLocked, onPanelUnlock } from './panelLock'
 import { renderInspector } from './inspector'
 import { renderLayerPanel, type PanelHooks } from './layerPanel'
 import { renderLayersPanel } from './layersPanel'
@@ -22,7 +23,19 @@ export function togglePanel(panel: HTMLElement, open?: boolean): void {
   document.body.classList.toggle('sheet-open', next)
 }
 
+let pending: { panel: HTMLElement; state: AppState; hooks: PanelHooks } | null = null
+
+onPanelUnlock(() => {
+  const next = pending
+  pending = null
+  if (next) renderPanel(next.panel, next.state, next.hooks)
+})
+
 export function renderPanel(panel: HTMLElement, state: AppState, hooks: PanelHooks): void {
+  if (isPanelLocked()) {
+    pending = { panel, state, hooks }
+    return
+  }
   clear(panel)
 
   const body = h('div.panel-body')

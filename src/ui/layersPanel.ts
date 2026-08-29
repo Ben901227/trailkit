@@ -10,6 +10,7 @@ import {
 } from '../model/store'
 import type { AppState, TileLayer } from '../model/types'
 import { clear, h } from './dom'
+import { keepAlive } from './panelLock'
 import { toast } from './toasts'
 
 function basemapPicker(state: AppState): HTMLElement {
@@ -45,12 +46,18 @@ function layerRow(layer: TileLayer, index: number, total: number): HTMLElement {
     type: 'range',
     min: '0',
     max: '100',
+    step: '5',
     value: String(Math.round(layer.opacity * 100)),
-    title: '透明度',
+    title: '不透明度：往右更不透明',
+    'aria-label': `${layer.name} 不透明度`,
   }) as HTMLInputElement
-  slider.addEventListener('input', () =>
-    patchLayer(layer.id, { opacity: Number(slider.value) / 100 }),
-  )
+  const readout = h('span.meta', {}, `${Math.round(layer.opacity * 100)}%`)
+  keepAlive(slider)
+  slider.addEventListener('input', () => {
+    // The panel is locked while dragging, so update the readout by hand.
+    readout.textContent = `${slider.value}%`
+    patchLayer(layer.id, { opacity: Number(slider.value) / 100 })
+  })
 
   const up = h('button.icon', {
     title: '上移一層',
@@ -67,7 +74,7 @@ function layerRow(layer: TileLayer, index: number, total: number): HTMLElement {
   row.append(
     h('div.layer-head', {}, check, h('span.name', { title: layer.origin }, layer.name), up, down,
       h('button.icon.danger', { title: '移除圖層', onclick: () => removeLayer(layer.id) }, '✕')),
-    h('div.layer-controls', {}, slider, h('span.meta', {}, `${Math.round(layer.opacity * 100)}%`)),
+    h('div.layer-controls', {}, slider, readout),
   )
   return row
 }

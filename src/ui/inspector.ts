@@ -4,6 +4,7 @@ import type { AppState } from '../model/types'
 import { findOverlay, findTrack, findWaypoint } from '../model/types'
 import { CAMERA_HINT, clear, h } from './dom'
 import type { PanelHooks } from './layerPanel'
+import { keepAlive } from './panelLock'
 import { overlayActions, trackActions, waypointActions } from './trackEditor'
 
 function stats(rows: [string, string][]): HTMLElement {
@@ -20,10 +21,17 @@ function opacitySlider(value: number, onChange: (opacity: number) => void): HTML
     type: 'range',
     min: '0',
     max: '100',
+    step: '5',
     value: String(Math.round(value * 100)),
+    'aria-label': '不透明度',
   }) as HTMLInputElement
-  slider.addEventListener('input', () => onChange(Number(slider.value) / 100))
-  wrap.append(h('label', {}, '透明度'), slider)
+  const label = h('label', {}, `不透明度 ${Math.round(value * 100)}%`)
+  keepAlive(slider)
+  slider.addEventListener('input', () => {
+    label.textContent = `不透明度 ${slider.value}%`
+    onChange(Number(slider.value) / 100)
+  })
+  wrap.append(label, slider)
   return wrap
 }
 

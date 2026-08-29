@@ -263,3 +263,10 @@ button:disabled:hover { border-color: var(--line); }
 .modal .hint { color: var(--muted); font-size: 12px; margin: 10px 0 0; }
 
 .panel-actions { display: flex; justify-content: flex-end; gap: 6px; margin-bottom: 8px; }
+
+/* Sliders need a real target: the default track is only a few pixels tall. */
+input[type="range"] {
+  height: 28px;
+  accent-color: var(--accent);
+  touch-action: none;
+}
