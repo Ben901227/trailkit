@@ -34,3 +34,19 @@ export function closeWaypointPopup(): void {
   popup?.remove()
   popup = null
 }
+
+/** Peaks carry no description; the label already holds name and height. */
+export function showPeakPopup(
+  map: MLMap,
+  feature: maplibregl.MapGeoJSONFeature,
+  at: maplibregl.LngLatLike,
+): void {
+  const name = feature.properties?.['name']
+  const elevation = feature.properties?.['elevation']
+  if (typeof name !== 'string') return
+  popup?.remove()
+  popup = new maplibregl.Popup({ closeButton: true, offset: 12, maxWidth: '240px' })
+    .setLngLat(at)
+    .setDOMContent(content(name, typeof elevation === 'number' ? `高程 ${elevation} m` : undefined))
+    .addTo(map)
+}

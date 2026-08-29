@@ -12,6 +12,7 @@ const initial: AppState = {
   terrain: false,
   showWaypoints: true,
   showWaypointLabels: true,
+  showPeaks: true,
   imageOverlays: false,
   vertex: null,
 }
@@ -84,6 +85,10 @@ export function setShowWaypoints(showWaypoints: boolean): void {
 
 export function setShowWaypointLabels(showWaypointLabels: boolean): void {
   update((s) => ({ ...s, showWaypointLabels }))
+}
+
+export function setShowPeaks(showPeaks: boolean): void {
+  update((s) => ({ ...s, showPeaks }))
 }
 
 export function setImageOverlays(imageOverlays: boolean): void {

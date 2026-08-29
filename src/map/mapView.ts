@@ -1,6 +1,7 @@
 import maplibregl, { type LngLatBoundsLike, type Map as MLMap } from 'maplibre-gl'
 import { BASEMAPS, TERRAIN, findBasemap, type Basemap } from './basemaps'
 import { CompassControl } from './compassControl'
+import { SRC_PEAKS } from './peaks'
 
 export const SRC_BASEMAP = 'basemap'
 export const SRC_TRACKS = 'tracks'
@@ -25,9 +26,49 @@ function baseStyle(basemap: Basemap): maplibregl.StyleSpecification {
       [SRC_WAYPOINTS]: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
       [SRC_VERTICES]: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
       [SRC_CORNERS]: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
+      [SRC_PEAKS]: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
     },
     layers: [
       { id: 'basemap', type: 'raster', source: SRC_BASEMAP },
+      // Peaks sit under the user's own data: they are background reference.
+      {
+        id: 'peak-symbol',
+        type: 'circle',
+        source: SRC_PEAKS,
+        paint: {
+          'circle-radius': 3.5,
+          'circle-color': '#8a5a2b',
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 1.5,
+        },
+      },
+      {
+        id: 'peak-label',
+        type: 'symbol',
+        source: SRC_PEAKS,
+        // Below this there are too many peaks in view for labels to mean much.
+        minzoom: 10,
+        layout: {
+          'text-field': ['get', 'label'],
+          'text-font': ['Noto Sans Regular'],
+          'text-size': 11,
+          'text-anchor': 'left',
+          'text-offset': [0.6, 0],
+          'text-optional': true,
+          'text-padding': 3,
+        },
+        paint: {
+          'text-color': '#6b4423',
+          'text-halo-color': '#ffffff',
+          'text-halo-width': 1.5,
+        },
+      },
+      {
+        id: 'peak-hit',
+        type: 'circle',
+        source: SRC_PEAKS,
+        paint: { 'circle-radius': 14, 'circle-color': '#000000', 'circle-opacity': 0 },
+      },
       {
         id: 'track-casing',
         type: 'line',

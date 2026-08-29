@@ -10,6 +10,7 @@ interface Saved {
   showWaypoints?: boolean
   showWaypointLabels?: boolean
   imageOverlays?: boolean
+  showPeaks?: boolean
 }
 
 /**
@@ -25,6 +26,7 @@ export function saveLayerPreferences(state: AppState): void {
     showWaypoints: state.showWaypoints,
     showWaypointLabels: state.showWaypointLabels,
     imageOverlays: state.imageOverlays,
+    showPeaks: state.showPeaks,
   }
   try {
     localStorage.setItem(KEY, JSON.stringify(payload))
@@ -55,5 +57,6 @@ export function loadLayerPreferences(): void {
     showWaypoints: saved.showWaypoints ?? s.showWaypoints,
     showWaypointLabels: saved.showWaypointLabels ?? s.showWaypointLabels,
     imageOverlays: saved.imageOverlays ?? s.imageOverlays,
+    showPeaks: saved.showPeaks ?? s.showPeaks,
   }))
 }

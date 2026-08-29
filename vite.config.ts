@@ -29,7 +29,7 @@ export default defineConfig({
       workbox: {
         // Cache the app shell only. Map tiles are large, unbounded and
         // change per viewport; caching them would fill the user's storage.
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2,pbf}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2,pbf,json}'],
         navigateFallback: 'index.html',
         runtimeCaching: [],
       },

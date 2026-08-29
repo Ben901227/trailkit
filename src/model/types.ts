@@ -100,6 +100,8 @@ export interface AppState {
   showWaypoints: boolean
   /** Draw waypoint names next to their markers. */
   showWaypointLabels: boolean
+  /** The bundled list of Taiwanese peaks, shown as background reference. */
+  showPeaks: boolean
   /**
    * Image overlays — dropped pictures and KML GroundOverlays — off by default.
    * Files still keep theirs, so turning this on brings them back.

@@ -8,6 +8,7 @@ import {
 import {
   addLayers,
   setImageOverlays,
+  setShowPeaks,
   setShowWaypointLabels,
   setShowWaypoints,
   moveLayer,
@@ -171,6 +172,16 @@ function waypointSettings(state: AppState): HTMLElement {
   return box
 }
 
+function peakSettings(state: AppState): HTMLElement {
+  const box = h('div.layer-section')
+  box.append(
+    h('div.section-label', {}, '臺灣山頭'),
+    toggleRow('顯示山頭（3,669 座）', state.showPeaks, setShowPeaks),
+    h('p.hint', {}, '內建清單，離線也能用；放大到一定程度才會標出名稱與高程。'),
+  )
+  return box
+}
+
 function overlaySettings(state: AppState): HTMLElement {
   const box = h('div.layer-section')
   const count = state.docs.reduce((n, d) => n + d.overlays.length, 0)
@@ -190,7 +201,12 @@ function overlaySettings(state: AppState): HTMLElement {
 
 export function renderLayersPanel(host: HTMLElement, state: AppState): void {
   clear(host)
-  host.append(basemapPicker(state), waypointSettings(state), overlaySettings(state))
+  host.append(
+    basemapPicker(state),
+    peakSettings(state),
+    waypointSettings(state),
+    overlaySettings(state),
+  )
 
   const stack = h('div.layer-section')
   stack.append(h('div.section-label', {}, `疊加圖層 (${state.layers.length})`))

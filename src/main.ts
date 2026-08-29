@@ -7,7 +7,8 @@ import { docFromOverlays, isImageFile, overlayFromImage } from './io/imageOverla
 import { loadFiles } from './io/loadFile'
 import { applyBasemap, createMap, fitTo, setTerrain } from './map/mapView'
 import { syncOverlayLayers } from './map/overlayLayers'
-import { closeWaypointPopup, showWaypointPopup } from './map/waypointPopup'
+import { PEAK_LAYERS, ensurePeaks } from './map/peaks'
+import { closeWaypointPopup, showPeakPopup, showWaypointPopup } from './map/waypointPopup'
 import { syncTileLayers } from './map/tileLayers'
 import { syncCornerLayer, syncTrackLayers, syncVertexLayer, visiblePositions } from './map/trackLayers'
 import { bounds } from './model/stats'
@@ -159,6 +160,20 @@ function scheduleMapSync(state: AppState): void {
   })
 }
 
+let peakError = false
+
+function syncPeaks(map: MLMap, state: AppState): void {
+  for (const layer of PEAK_LAYERS) {
+    map.setLayoutProperty(layer, 'visibility', state.showPeaks ? 'visible' : 'none')
+  }
+  if (!state.showPeaks || peakError) return
+  // Relative to the page, so it resolves under the GitHub Pages subpath too.
+  void ensurePeaks(map, new URL('data/peaks.json', document.baseURI).toString()).catch(() => {
+    peakError = true
+    toast('山頭清單載入失敗', 'error')
+  })
+}
+
 function syncMap(state: AppState): void {
   if (!map || !styleReady) return
 
@@ -174,6 +189,7 @@ function syncMap(state: AppState): void {
   // A popup left open over hidden waypoints is just a stray label.
   if (!state.showWaypoints) closeWaypointPopup()
 
+  syncPeaks(map, state)
   syncTrackLayers(map, state)
   syncVertexLayer(map, state)
   syncCornerLayer(map, state)
@@ -274,11 +290,16 @@ function start(): void {
       return
     }
 
-    if (hits.length) selectFromMap(hits, e.lngLat)
-    else {
-      setSelection(null)
-      closeWaypointPopup()
+    if (hits.length) {
+      selectFromMap(hits, e.lngLat)
+      return
     }
+
+    setSelection(null)
+    // Peaks are reference data, not something to select — just name them.
+    const peak = map!.queryRenderedFeatures(e.point, { layers: ['peak-hit'] })[0]
+    if (peak && getState().showPeaks) showPeakPopup(map!, peak, e.lngLat)
+    else closeWaypointPopup()
   })
   for (const layer of ['waypoint-hit', 'track-hit']) {
     map.on('mouseenter', layer, () => (map!.getCanvas().style.cursor = 'pointer'))
