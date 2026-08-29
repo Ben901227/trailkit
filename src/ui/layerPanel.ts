@@ -17,6 +17,7 @@ export interface PanelHooks {
   zoomTo: (sel: Selection) => void
   mergeTracks: () => void
   exportDocs: () => void
+  exportDoc: (docId: string, filename: string) => void
   /** Current map view as [west, south, east, north], for snapping overlays. */
   viewportBounds: () => [number, number, number, number] | null
 }
@@ -159,6 +160,10 @@ export function renderLayerPanel(host: HTMLElement, state: AppState, hooks: Pane
   for (const doc of state.docs) {
     const itemCount = doc.tracks.length + doc.waypoints.length + doc.overlays.length
     const open = isExpanded(doc.id, itemCount)
+    const anyVisible =
+      doc.tracks.some((t) => t.visible) ||
+      doc.waypoints.some((w) => w.visible) ||
+      doc.overlays.some((o) => o.visible)
     const card = h('div.doc')
     card.append(
       h(
@@ -172,6 +177,30 @@ export function renderLayerPanel(host: HTMLElement, state: AppState, hooks: Pane
         h('span.caret', {}, open ? '▾' : '▸'),
         h('span.name', { title: doc.name }, doc.name),
         h('span.tag', {}, `${itemCount} 項`),
+        h(
+          'button.icon',
+          {
+            title: anyVisible ? '隱藏這個檔案的全部內容' : '顯示這個檔案的全部內容',
+            onclick: (e: Event) => {
+              e.stopPropagation()
+              setDocTracksVisible(doc.id, !anyVisible)
+              setDocWaypointsVisible(doc.id, !anyVisible)
+              setDocOverlaysVisible(doc.id, !anyVisible)
+            },
+          },
+          anyVisible ? '◉' : '◌',
+        ),
+        h(
+          'button.icon',
+          {
+            title: '下載這個檔案',
+            onclick: (e: Event) => {
+              e.stopPropagation()
+              hooks.exportDoc(doc.id, doc.name)
+            },
+          },
+          '↓',
+        ),
         h(
           'button.icon.danger',
           {

@@ -27,7 +27,13 @@ function selectionName(state: AppState): string | null {
   return findOverlay(state, sel.docId, sel.id)?.name ?? null
 }
 
-export function openExportDialog(): void {
+export interface ExportPreset {
+  /** Pre-scope the dialog to one file, as the download button in the list does. */
+  docId: string
+  filename: string
+}
+
+export function openExportDialog(preset?: ExportPreset): void {
   const state = getState()
   if (!state.docs.length) {
     toast('尚未開啟任何檔案')
@@ -57,7 +63,7 @@ export function openExportDialog(): void {
 
   const selected = selectionName(state)
   const scope = h('div.chips')
-  let chosenScope: ExportScope = 'all'
+  let chosenScope: ExportScope = preset ? 'doc' : 'all'
   const scopeNote = h('p.hint')
 
   const describeScope = () => {
@@ -66,16 +72,22 @@ export function openExportDialog(): void {
         ? selected
           ? `將只匯出「${selected}」`
           : ''
-        : ''
+        : chosenScope === 'doc' && preset
+          ? `將只匯出「${preset.filename}」`
+          : ''
   }
 
-  const scopeButtons = SCOPES.map((s) => {
+  const scopes = preset
+    ? [{ id: 'doc' as ExportScope, label: `僅這個檔案` }, ...SCOPES]
+    : SCOPES
+
+  const scopeButtons = scopes.map((s) => {
     const btn = h('button', {
       'aria-pressed': String(s.id === chosenScope),
       onclick: () => {
         chosenScope = s.id
         scopeButtons.forEach((b, i) =>
-          b.setAttribute('aria-pressed', String(SCOPES[i]!.id === chosenScope)),
+          b.setAttribute('aria-pressed', String(scopes[i]!.id === chosenScope)),
         )
         describeScope()
       },
@@ -92,7 +104,7 @@ export function openExportDialog(): void {
 
   const nameInput = h('input.text', {
     type: 'text',
-    value: (state.docs[0]?.name ?? 'export').replace(/\.[^.]+$/, ''),
+    value: (preset?.filename ?? state.docs[0]?.name ?? 'export').replace(/\.[^.]+$/, ''),
   }) as HTMLInputElement
 
   const close = () => backdrop.remove()
@@ -103,6 +115,7 @@ export function openExportDialog(): void {
         format: chosenFormat,
         scope: chosenScope,
         filename: nameInput.value,
+        ...(preset ? { docId: preset.docId } : {}),
       })
       for (const w of result.warnings) toast(w, 'error')
       const how = await saveFile(result.blob, result.filename)
@@ -130,6 +143,7 @@ export function openExportDialog(): void {
     ),
   )
 
+  describeScope()
   backdrop.append(box)
   backdrop.addEventListener('click', (e) => {
     if (e.target === backdrop) close()

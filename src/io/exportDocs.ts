@@ -5,12 +5,14 @@ import { writeKml } from './writeKml'
 import { writeKmz } from './writeKmz'
 
 export type ExportFormat = 'gpx' | 'kml' | 'kmz' | 'geojson'
-export type ExportScope = 'all' | 'visible' | 'selection'
+export type ExportScope = 'all' | 'visible' | 'selection' | 'doc'
 
 export interface ExportRequest {
   format: ExportFormat
   scope: ExportScope
   filename: string
+  /** Which file, when the scope is 'doc'. */
+  docId?: string
 }
 
 export interface ExportResult {
@@ -20,8 +22,9 @@ export interface ExportResult {
   warnings: string[]
 }
 
-function pick(state: AppState, scope: ExportScope): Doc[] {
+function pick(state: AppState, scope: ExportScope, docId?: string): Doc[] {
   if (scope === 'all') return state.docs
+  if (scope === 'doc') return state.docs.filter((d) => d.id === docId)
   if (scope === 'visible') {
     return state.docs
       .map((d) => ({
@@ -55,9 +58,15 @@ const MIME: Record<ExportFormat, string> = {
 }
 
 export async function buildExport(state: AppState, req: ExportRequest): Promise<ExportResult> {
-  const docs = pick(state, req.scope)
+  const docs = pick(state, req.scope, req.docId)
   // Layers are shared across files, so scope narrows them by visibility only.
-  const layers = req.scope === 'all' ? state.layers : state.layers.filter((l) => l.visible)
+  // One file's export should not drag the whole shared layer stack with it.
+  const layers =
+    req.scope === 'all'
+      ? state.layers
+      : req.scope === 'doc'
+        ? []
+        : state.layers.filter((l) => l.visible)
   if (!docs.length) {
     throw new Error(
       req.scope === 'selection'

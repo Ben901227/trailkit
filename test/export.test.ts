@@ -117,3 +117,54 @@ describe('image overlays default to off', () => {
     expect(await result.blob.text()).toContain('疊圖')
   })
 })
+
+describe('export scope "doc"', () => {
+  const two: AppState = {
+    ...state,
+    docs: [doc, { ...doc, id: 'd2', name: 'other.gpx', tracks: [track('t9', true)], overlays: [] }],
+  }
+
+  it('exports only the named file', async () => {
+    const result = await buildExport(two, {
+      format: 'gpx',
+      scope: 'doc',
+      filename: 'other',
+      docId: 'd2',
+    })
+    const text = await result.blob.text()
+    expect(text).toContain('<name>t9</name>')
+    expect(text).not.toContain('<name>t1</name>')
+  })
+
+  it('leaves the shared raster layers out of a single file export', async () => {
+    const withLayers: AppState = {
+      ...two,
+      layers: [
+        {
+          id: 'l1',
+          name: '魯地圖',
+          visible: true,
+          opacity: 0.6,
+          url: 'https://example.tw/{z}/{x}/{y}.png',
+          minzoom: 0,
+          maxzoom: 16,
+          tms: false,
+          origin: 'built-in',
+        },
+      ],
+    }
+    const result = await buildExport(withLayers, {
+      format: 'kml',
+      scope: 'doc',
+      filename: 'other',
+      docId: 'd2',
+    })
+    expect(await result.blob.text()).not.toContain('魯地圖')
+  })
+
+  it('reports an unknown file rather than exporting everything', async () => {
+    await expect(
+      buildExport(two, { format: 'gpx', scope: 'doc', filename: 'x', docId: 'nope' }),
+    ).rejects.toThrow()
+  })
+})
