@@ -1,3 +1,4 @@
+import { sinicaTileUrl } from '../map/tileCatalog'
 import type { RawTileLayer } from './parseKml'
 
 /**
@@ -41,9 +42,9 @@ function cleanName(name: string): string {
 
 function translate(href: string): string | null {
   const sinica = /gis\.sinica\.edu\.tw\/(?:googlemap|tileserver)\/([A-Za-z0-9_]+)\//.exec(href)
-  if (sinica) {
-    return `https://gis.sinica.edu.tw/tileserver/file-exists.php?img=${sinica[1]}-png-{z}-{x}-{y}`
-  }
+  // The catalogue knows which sheets are jpg; asking for the wrong format
+  // returns a blank tile rather than an error.
+  if (sinica) return sinicaTileUrl(sinica[1] as string)
 
   const happyman = /tile\.happyman\.idv\.tw\/mp\/kml\/([A-Za-z0-9_]+)\//.exec(href)
   if (happyman && HAPPYMAN_LAYERS.has(happyman[1] as string)) {

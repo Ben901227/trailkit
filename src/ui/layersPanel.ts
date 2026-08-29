@@ -1,5 +1,10 @@
 import { BASEMAPS } from '../map/basemaps'
-import { DEFAULT_LAYER_OPACITY, TILE_CATALOG, layerFromCatalog } from '../map/tileCatalog'
+import {
+  DEFAULT_LAYER_OPACITY,
+  TILE_CATALOG,
+  layerFromCatalog,
+  type CatalogEntry,
+} from '../map/tileCatalog'
 import {
   addLayers,
   setImageOverlays,
@@ -83,12 +88,49 @@ function layerRow(layer: TileLayer, index: number, total: number): HTMLElement {
   return row
 }
 
+/** Past this many, a list of buttons is a wall; use a dropdown instead. */
+const CHIP_LIMIT = 8
+
+function addFromCatalog(entry: CatalogEntry): void {
+  if (addLayers([layerFromCatalog(entry)]).length === 0) toast('這個圖層已經在清單裡了')
+}
+
+function chipGroup(entries: CatalogEntry[], have: Set<string>): HTMLElement {
+  const chips = h('div.chips')
+  for (const entry of entries) {
+    const btn = h('button', {
+      title: have.has(entry.url) ? '已在圖層清單中' : entry.attribution,
+      onclick: () => addFromCatalog(entry),
+    }) as HTMLButtonElement
+    btn.textContent = entry.name
+    btn.disabled = have.has(entry.url)
+    chips.append(btn)
+  }
+  return chips
+}
+
+function selectGroup(entries: CatalogEntry[], have: Set<string>): HTMLElement {
+  const select = h('select') as HTMLSelectElement
+  select.append(h('option', { value: '' }, `選一個加入…（${entries.length} 張）`))
+  for (const entry of entries) {
+    const option = h('option', { value: entry.id }, entry.name) as HTMLOptionElement
+    option.disabled = have.has(entry.url)
+    select.append(option)
+  }
+  select.addEventListener('change', () => {
+    const entry = entries.find((e) => e.id === select.value)
+    if (entry) addFromCatalog(entry)
+    select.value = ''
+  })
+  return select
+}
+
 function catalogPicker(state: AppState): HTMLElement {
   const box = h('div.layer-section')
   box.append(h('div.section-label', {}, '加入圖層'))
 
   const have = new Set(state.layers.map((l) => l.url))
-  const groups = new Map<string, typeof TILE_CATALOG>()
+  const groups = new Map<string, CatalogEntry[]>()
   for (const entry of TILE_CATALOG) {
     const list = groups.get(entry.group) ?? []
     list.push(entry)
@@ -96,31 +138,25 @@ function catalogPicker(state: AppState): HTMLElement {
   }
 
   for (const [group, entries] of groups) {
-    const chips = h('div.chips')
-    for (const entry of entries) {
-      const added = have.has(entry.url)
-      const btn = h('button', {
-        title: added ? '已在圖層清單中' : entry.attribution,
-        onclick: () => {
-          if (addLayers([layerFromCatalog(entry)]).length === 0) toast('這個圖層已經在清單裡了')
-        },
-      }) as HTMLButtonElement
-      btn.textContent = entry.name
-      btn.disabled = added
-      chips.append(btn)
-    }
-    box.append(h('div.group-label', {}, group), chips)
+    box.append(
+      h('div.group-label', {}, group),
+      entries.length > CHIP_LIMIT ? selectGroup(entries, have) : chipGroup(entries, have),
+    )
   }
   return box
 }
 
-function toggleRow(label: string, checked: boolean, onChange: (on: boolean) => void, disabled = false): HTMLElement {
+function toggleRow(
+  label: string,
+  checked: boolean,
+  onChange: (on: boolean) => void,
+  disabled = false,
+): HTMLElement {
   const check = h('input', { type: 'checkbox' }) as HTMLInputElement
   check.checked = checked
   check.disabled = disabled
   check.addEventListener('change', () => onChange(check.checked))
-  const row = h('label.toggle-row', {}, check, h('span', {}, label))
-  return row
+  return h('label.toggle-row', {}, check, h('span', {}, label))
 }
 
 function waypointSettings(state: AppState): HTMLElement {

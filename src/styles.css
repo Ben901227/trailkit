@@ -321,3 +321,5 @@ input[type="range"] {
 
 .merge-toolbar { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
 .merge-toolbar .meta { flex: 1; color: var(--muted); font-size: 12px; }
+
+.layer-section > .group-label + select { width: 100%; }

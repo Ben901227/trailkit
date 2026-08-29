@@ -13,13 +13,22 @@ const link = (name: string, href: string) =>
 describe('extractNetworkLayers', () => {
   it('turns an Academia Sinica super-overlay into its tile URL', () => {
     const { layers } = extractNetworkLayers(
-      kml(link('1989-臺灣經建1版地形圖', 'http://gis.sinica.edu.tw/googlemap/TM25K_1989/LOD.kml')),
+      kml(link('1944-美軍地形圖', 'http://gis.sinica.edu.tw/googlemap/AM50K_1944/LOD.kml')),
     )
     expect(layers).toHaveLength(1)
     expect(layers[0]!.url).toBe(
-      'https://gis.sinica.edu.tw/tileserver/file-exists.php?img=TM25K_1989-png-{z}-{x}-{y}',
+      'https://gis.sinica.edu.tw/tileserver/file-exists.php?img=AM50K_1944-png-{z}-{x}-{y}',
     )
-    expect(layers[0]!.name).toBe('1989-臺灣經建1版地形圖')
+    expect(layers[0]!.name).toBe('1944-美軍地形圖')
+  })
+
+  it('uses the format that sheet is actually served in, not always png', () => {
+    const { layers } = extractNetworkLayers(
+      kml(link('1989', 'http://gis.sinica.edu.tw/googlemap/TM25K_1989/LOD.kml')),
+    )
+    // Asking for png here returns a blank placeholder, so the layer would
+    // draw nothing at all.
+    expect(layers[0]!.url).toContain('TM25K_1989-jpg-')
   })
 
   it('upgrades the link to https, since the app is served over https', () => {
