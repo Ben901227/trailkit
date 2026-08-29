@@ -1,4 +1,6 @@
-# GPX / KML 編輯器
+# trailkit
+
+**https://ben901227.github.io/trailkit/**
 
 在瀏覽器裡開啟、檢視、編輯與合併 GPX / KML / KMZ 軌跡，並像 Google Earth 一樣疊加底圖與校正圖片。
 純前端、無後端、無 API key，可直接部署到 GitHub Pages。
