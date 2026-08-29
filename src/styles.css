@@ -282,3 +282,26 @@ input[type="range"] {
 .toggle-row { display: flex; align-items: center; gap: 8px; min-height: 38px; cursor: pointer; }
 .toggle-row input { width: 18px; height: 18px; }
 .toggle-row input:disabled + span { color: var(--muted); }
+
+/* ---------- compass ---------- */
+
+/* Put the compass beside the scale bar rather than stacked above it. */
+.maplibregl-ctrl-bottom-left {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+}
+
+.compass-ctrl { background: none; box-shadow: none; }
+.compass-ctrl button {
+  width: 62px;
+  height: 62px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, .3));
+}
+.compass-ctrl button:hover { border: 0; }
+.compass-rose { display: block; transform-origin: 50% 50%; will-change: transform; }
+.compass-rose svg { display: block; }

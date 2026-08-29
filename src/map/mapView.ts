@@ -1,5 +1,6 @@
 import maplibregl, { type LngLatBoundsLike, type Map as MLMap } from 'maplibre-gl'
 import { BASEMAPS, TERRAIN, findBasemap, type Basemap } from './basemaps'
+import { CompassControl } from './compassControl'
 
 export const SRC_BASEMAP = 'basemap'
 export const SRC_TRACKS = 'tracks'
@@ -185,12 +186,15 @@ export function createMap(container: HTMLElement, basemapId: string): MLMap {
     transformRequest: (url, resourceType) =>
       resourceType === 'Glyphs' ? { url: glyphFallback(url) } : { url },
   })
-  map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right')
+  // The rose by the scale bar names the directions, so the navigation
+  // control keeps only its zoom buttons.
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
   map.addControl(
     new maplibregl.GeolocateControl({ trackUserLocation: true, showAccuracyCircle: true }),
     'top-right',
   )
   map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left')
+  map.addControl(new CompassControl(), 'bottom-left')
   return map
 }
 
