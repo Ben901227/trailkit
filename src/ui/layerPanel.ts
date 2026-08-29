@@ -1,3 +1,4 @@
+import { checkpoint, checkpointCoalesced } from '../model/history'
 import { removeDoc, setSelection, setTrackColor, setVisible } from '../model/store'
 import { formatDistance, trackStats } from '../model/stats'
 import type { AppState, Selection } from '../model/types'
@@ -31,7 +32,11 @@ function itemRow(
   if (color) {
     const picker = h('input', { type: 'color', value: color.value }) as HTMLInputElement
     picker.addEventListener('click', (e) => e.stopPropagation())
-    picker.addEventListener('input', () => color.onChange(picker.value))
+    picker.addEventListener('input', () => {
+      // A colour drag fires continuously; keep it to one undo step.
+      checkpointCoalesced(`改變顏色：${label}`)
+      color.onChange(picker.value)
+    })
     row.append(picker)
   }
 
@@ -73,7 +78,13 @@ export function renderLayerPanel(host: HTMLElement, state: AppState, hooks: Pane
         h('span.tag', {}, doc.sourceFormat),
         h(
           'button.icon.danger',
-          { title: '關閉此檔案', onclick: () => removeDoc(doc.id) },
+          {
+          title: '關閉此檔案',
+          onclick: () => {
+            checkpoint(`關閉 ${doc.name}`)
+            removeDoc(doc.id)
+          },
+        },
           '✕',
         ),
       ),

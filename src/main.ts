@@ -8,8 +8,10 @@ import { applyBasemap, createMap, fitTo } from './map/mapView'
 import { syncOverlayLayers } from './map/overlayLayers'
 import { syncTrackLayers, visiblePositions } from './map/trackLayers'
 import { bounds } from './model/stats'
+import { checkpoint, onHistoryChange, redo, undo } from './model/history'
 import { addDocs, getState, setSelection, subscribe } from './model/store'
 import type { AppState, Selection } from './model/types'
+import { openExportDialog } from './ui/exportDialog'
 import { renderPanel, setTab, togglePanel } from './ui/panel'
 import { initDropZone } from './ui/dropZone'
 import { initToasts, toast } from './ui/toasts'
@@ -65,6 +67,7 @@ async function openFiles(files: File[]): Promise<void> {
 
   const docs = results.map((r) => r.doc)
   if (!docs.length) return
+  checkpoint('開啟檔案')
 
   // Continue the palette across files so two documents don't both open in red.
   let colorIndex = getState().docs.reduce((n, d) => n + d.tracks.length, 0)
@@ -87,6 +90,7 @@ async function openFiles(files: File[]): Promise<void> {
 function render(state: AppState): void {
   renderToolbar(toolbarEl, state, {
     openFiles: (files) => void openFiles(files),
+    exportDocs: openExportDialog,
     fitAll,
     togglePanel: () => togglePanel(panelEl),
     setCustomBasemap: (url) => {
@@ -114,6 +118,18 @@ function selectFromMap(features: maplibregl.MapGeoJSONFeature[]): void {
   renderPanel(panelEl, getState(), hooks)
 }
 
+function installShortcuts(): void {
+  document.addEventListener('keydown', (e) => {
+    const mod = e.metaKey || e.ctrlKey
+    if (!mod || e.key.toLowerCase() !== 'z') return
+    const target = e.target as HTMLElement | null
+    if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return
+    e.preventDefault()
+    const label = e.shiftKey ? redo() : undo()
+    if (label) toast(`${e.shiftKey ? '重做' : '復原'}：${label}`)
+  })
+}
+
 function start(): void {
   map = createMap(mapEl, getState().basemapId)
   map.on('load', () => {
@@ -136,6 +152,8 @@ function start(): void {
   }
 
   initDropZone(document.body, (files) => void openFiles(files))
+  onHistoryChange(() => render(getState()))
+  installShortcuts()
   subscribe(render)
   render(getState())
 }

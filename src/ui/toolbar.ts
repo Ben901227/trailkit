@@ -1,9 +1,11 @@
 import { BASEMAPS } from '../map/basemaps'
+import { canRedo, canUndo, redo, undo } from '../model/history'
 import { setBasemap } from '../model/store'
 import type { AppState } from '../model/types'
 import { clear, h } from './dom'
 
 export interface ToolbarHooks {
+  exportDocs: () => void
   openFiles: (files: File[]) => void
   fitAll: () => void
   togglePanel: () => void
@@ -43,10 +45,18 @@ export function renderToolbar(host: HTMLElement, state: AppState, hooks: Toolbar
     setBasemap(select.value)
   })
 
+  const undoBtn = h('button.icon', { title: '復原 (⌘Z)', onclick: () => undo() }, '↶')
+  const redoBtn = h('button.icon', { title: '重做 (⇧⌘Z)', onclick: () => redo() }, '↷')
+  ;(undoBtn as HTMLButtonElement).disabled = !canUndo()
+  ;(redoBtn as HTMLButtonElement).disabled = !canRedo()
+
   host.append(
     h('span.title', {}, 'GPX / KML'),
     h('button.primary', { onclick: () => input.click() }, '開啟檔案'),
     input,
+    h('button', { onclick: hooks.exportDocs, title: '匯出檔案' }, '匯出'),
+    undoBtn,
+    redoBtn,
     h('button', { onclick: hooks.fitAll, title: '縮放到全部內容' }, '全覽'),
     h('span.spacer'),
     select,
