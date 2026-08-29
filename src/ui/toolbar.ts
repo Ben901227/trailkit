@@ -48,7 +48,7 @@ export function renderToolbar(host: HTMLElement, state: AppState, hooks: Toolbar
     ),
     h('button', { onclick: hooks.fitAll, title: '縮放到全部內容' }, '全覽'),
     h('span.spacer'),
-    h('button', { onclick: hooks.openLayers, title: '底圖與疊加圖層' }, '圖層'),
+    h('button.layers-shortcut', { onclick: hooks.openLayers, title: '底圖與疊加圖層' }, '圖層'),
     h('button.sheet-toggle', { onclick: hooks.togglePanel }, '面板'),
   )
 }

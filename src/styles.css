@@ -152,6 +152,9 @@ dl.stats dd { margin: 0; }
 
   body.sheet-open .sheet-toggle { bottom: calc(62vh + 12px); }
 
+  /* The sheet already has a 圖層 tab; the toolbar is short on room. */
+  .layers-shortcut { display: none; }
+
   #toolbar .title { display: none; }
   #toolbar select { max-width: 42vw; }
   #toasts { bottom: 76px; }
