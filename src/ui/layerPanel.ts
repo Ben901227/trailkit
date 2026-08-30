@@ -11,7 +11,7 @@ import {
 import { formatDistance, trackStats } from '../model/stats'
 import type { AppState, Selection } from '../model/types'
 import { selectionKey } from '../model/types'
-import { CAMERA_HINT, clear, h } from './dom'
+import { CAMERA_HINT, HELP_URL, clear, h } from './dom'
 import { icon } from './icons'
 
 export interface PanelHooks {
@@ -134,6 +134,11 @@ export function renderLayerPanel(host: HTMLElement, state: AppState, hooks: Pane
         '尚未開啟檔案。點上方「開啟檔案」，或把 GPX / KML / KMZ / 圖片拖進來。',
       ),
       h('p.hint', {}, CAMERA_HINT),
+      h(
+        'p.hint',
+        {},
+        h('a', { href: HELP_URL, target: '_blank', rel: 'noreferrer noopener' }, '使用說明 ↗'),
+      ),
     )
     return
   }

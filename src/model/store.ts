@@ -12,7 +12,7 @@ const initial: AppState = {
   terrain: false,
   showWaypoints: true,
   showWaypointLabels: true,
-  showPeaks: true,
+  showPeaks: false,
   imageOverlays: false,
   vertex: null,
 }

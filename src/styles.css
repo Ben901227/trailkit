@@ -323,3 +323,5 @@ input[type="range"] {
 .merge-toolbar .meta { flex: 1; color: var(--muted); font-size: 12px; }
 
 .layer-section > .group-label + select { width: 100%; }
+
+.panel-body .hint a { color: var(--accent); }

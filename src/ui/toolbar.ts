@@ -1,7 +1,7 @@
 import { canRedo, canUndo, redo, undo } from '../model/history'
 import { setEditing, setTerrain } from '../model/store'
 import type { AppState } from '../model/types'
-import { clear, h } from './dom'
+import { HELP_URL, clear, h } from './dom'
 import { icon } from './icons'
 
 export interface ToolbarHooks {
@@ -58,6 +58,14 @@ export function renderToolbar(host: HTMLElement, state: AppState, hooks: Toolbar
     h('button', { onclick: hooks.fitAll, title: '縮放到全部內容' }, '全覽'),
     h('span.spacer'),
     h('button.layers-shortcut', { onclick: hooks.openLayers, title: '底圖與疊加圖層' }, '圖層'),
+    h(
+      'button.desktop-only',
+      {
+        title: '使用說明',
+        onclick: () => window.open(HELP_URL, '_blank', 'noreferrer'),
+      },
+      '說明',
+    ),
     h('button.sheet-toggle', { onclick: hooks.togglePanel }, '面板'),
   )
 }

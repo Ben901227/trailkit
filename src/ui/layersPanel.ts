@@ -18,7 +18,7 @@ import {
   setCustomBasemapUrl,
 } from '../model/store'
 import type { AppState, TileLayer } from '../model/types'
-import { clear, h } from './dom'
+import { HELP_URL, clear, h } from './dom'
 import { icon } from './icons'
 import { keepAlive } from './panelLock'
 import { toast } from './toasts'
@@ -221,5 +221,13 @@ export function renderLayersPanel(host: HTMLElement, state: AppState): void {
       h('p.hint', {}, `新加入的圖層預設 ${Math.round(DEFAULT_LAYER_OPACITY * 100)}% 不透明，可用滑桿調整。`),
     )
   }
-  host.append(stack, catalogPicker(state))
+  host.append(
+    stack,
+    catalogPicker(state),
+    h(
+      'p.hint',
+      {},
+      h('a', { href: HELP_URL, target: '_blank', rel: 'noreferrer noopener' }, '使用說明與快捷鍵 ↗'),
+    ),
+  )
 }
