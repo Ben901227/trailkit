@@ -1,0 +1,25 @@
+name: CI
+
+# The deploy workflow already runs the tests before it publishes, so main is
+# covered. This one covers everywhere else: branches and pull requests, where
+# a failure should be visible before it reaches main.
+on:
+  pull_request:
+  push:
+    branches-ignore: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: 單元測試
+        run: npm test
+      - name: 型別檢查與建置
+        run: npm run build

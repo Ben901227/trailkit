@@ -130,9 +130,11 @@ npm run build    # 型別檢查 + 產生 dist/
 `test data/`（未進版控）可放實機匯出的檔案，`test/testdata.test.ts` 會整個資料夾跑過一遍，
 確認每個檔案都開得起來且沒有內容被略過；資料夾不存在時該測試自動跳過。
 
-## 部署
+## CI 與部署
 
-推到 `main` 後由 `.github/workflows/deploy.yml` 自動建置並發佈到 GitHub Pages。
+- `.github/workflows/ci.yml` — pull request 與 `main` 以外的分支：跑測試與型別檢查。
+- `.github/workflows/deploy.yml` — 推到 `main`：**先跑測試**，通過才建置並發佈到 GitHub Pages。
+  測試失敗就不會部署。
 Vite 的 `base` 設為 `./`，因此同一份建置在網域根目錄與 `/<repo>/` 子路徑下都能運作。
 
 ## 授權
