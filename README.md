@@ -135,6 +135,33 @@ npm run build    # 型別檢查 + 產生 dist/
 推到 `main` 後由 `.github/workflows/deploy.yml` 自動建置並發佈到 GitHub Pages。
 Vite 的 `base` 設為 `./`，因此同一份建置在網域根目錄與 `/<repo>/` 子路徑下都能運作。
 
+## 授權
+
+本專案自行撰寫的程式碼採 **MIT**，見 [`LICENSE`](LICENSE)。
+
+專案中的第三方成分各有其授權，不受上述 MIT 涵蓋：
+
+| 成分 | 授權 |
+|---|---|
+| [MapLibre GL JS](https://github.com/maplibre/maplibre-gl-js) | BSD-3-Clause |
+| [@tmcw/togeojson](https://github.com/placemark/togeojson) | BSD-2-Clause |
+| [JSZip](https://github.com/Stuk/jszip) | MIT（原專案為 MIT 或 GPL-3.0 雙授權，本專案採 MIT） |
+| `public/fonts/` 的 Noto Sans 字形 | SIL OFL-1.1，全文見 [`public/fonts/OFL.txt`](public/fonts/OFL.txt) |
+| `public/data/peaks.json` | 見下方說明 |
+
+### 關於 `peaks.json`
+
+這份山頭清單整理自 Google Earth 版「魯地圖＋航跡圖」的全山頭圖層，為**第三方彙整的資料**。
+山名、座標、高程屬於事實，事實本身通常不受著作權保護；但彙編的選擇與編排在多數法域仍可能
+受保護。若你要 fork 或商業利用本專案，請自行確認這份資料的使用條件，或移除
+`public/data/peaks.json`（移除後「臺灣山頭」圖層會顯示載入失敗，其餘功能不受影響）。
+
+### 圖磚服務
+
+底圖與疊加圖層（OpenStreetMap、Esri、國土測繪中心、魯地圖、中研院百年歷史地圖、
+AWS Open Data 地形）**並未包含在本專案內**，程式只是引用其公開網址。這些服務各有自己的
+使用條款與流量政策，請依其規定使用。
+
 ## 底圖來源
 
 預設底圖使用免金鑰的公開圖磚。**OpenStreetMap 官方圖磚有使用政策限制**，正式對外站台請在
