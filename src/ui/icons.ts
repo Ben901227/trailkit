@@ -21,6 +21,7 @@ const PATHS = {
   chevronUp: ['m6 14.5 6-6 6 6'],
   chevronDown: ['m6 9.5 6 6 6-6'],
   chevronRight: ['m9.5 6 6 6-6 6'],
+  chevronLeft: ['m14.5 6-6 6 6 6'],
   undo: ['M9 13.5 4.5 9 9 4.5', 'M4.5 9h9.5a5.5 5.5 0 0 1 0 11H10'],
   redo: ['M15 13.5 19.5 9 15 4.5', 'M19.5 9H10a5.5 5.5 0 0 0 0 11h4'],
   arrowRight: ['M4.5 12h14', 'm13 6.5 5.5 5.5-5.5 5.5'],

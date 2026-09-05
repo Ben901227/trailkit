@@ -22,6 +22,7 @@ import { installVertexTool } from './edit/vertexTool'
 import { openExportDialog } from './ui/exportDialog'
 import { openMergeDialog } from './ui/mergeDialog'
 import { renderPanel, setTab, togglePanel } from './ui/panel'
+import { initSidebar, toggleSidebar } from './ui/sidebar'
 import { initDropZone } from './ui/dropZone'
 import { initToasts, toast } from './ui/toasts'
 import { renderToolbar } from './ui/toolbar'
@@ -204,6 +205,11 @@ function render(state: AppState): void {
     mergeTracks: openMergeDialog,
     fitAll,
     togglePanel: () => togglePanel(panelEl),
+    // Re-render so the chevron flips; the panel keeps its own lock.
+    toggleSidebar: () => {
+      toggleSidebar()
+      render(getState())
+    },
     openLayers: () => {
       setTab('layers')
       togglePanel(panelEl, true)
@@ -249,6 +255,9 @@ function installShortcuts(): void {
 }
 
 function start(): void {
+  // Before the map so the grid settles at its final width on the first frame.
+  initSidebar()
+
   map = createMap(mapEl, getState().basemapId)
   // 'style.load' fires as soon as the style is applied; 'load' also waits for
   // the first tiles, which never arrive when the tile host is unreachable.

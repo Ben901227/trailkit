@@ -122,10 +122,15 @@ dl.stats dd { margin: 0; }
     grid-template-columns: var(--panel-w) 1fr;
     grid-template-rows: var(--toolbar-h) 1fr;
     grid-template-areas: "toolbar toolbar" "panel map";
+    /* Animating --panel-w would need @property; the track animates as-is. */
+    transition: grid-template-columns .22s ease;
   }
   #toolbar { grid-area: toolbar; }
   #panel { grid-area: panel; }
   #map { grid-area: map; }
+
+  body.panel-collapsed #app { grid-template-columns: 0 1fr; }
+  body.panel-collapsed #panel { border-right: 0; overflow: hidden; }
 }
 
 /* ---------- layout: mobile bottom sheet ---------- */
@@ -166,7 +171,8 @@ dl.stats dd { margin: 0; }
   body.sheet-open .sheet-toggle { bottom: calc(62vh + 12px); }
 
   /* The sheet already has these; the toolbar is short on room. */
-  .layers-shortcut, .desktop-only { display: none; }
+  /* `button.desktop-only` too, to outrank `button.icon`'s inline-flex. */
+  .layers-shortcut, .desktop-only, button.desktop-only { display: none; }
 
   #toolbar .title { display: none; }
   #toolbar select { max-width: 42vw; }

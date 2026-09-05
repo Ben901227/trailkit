@@ -3,6 +3,7 @@ import { setEditing, setTerrain } from '../model/store'
 import type { AppState } from '../model/types'
 import { HELP_URL, clear, h } from './dom'
 import { icon } from './icons'
+import { isSidebarCollapsed } from './sidebar'
 
 export interface ToolbarHooks {
   exportDocs: () => void
@@ -11,6 +12,7 @@ export interface ToolbarHooks {
   openFiles: (files: File[]) => void
   fitAll: () => void
   togglePanel: () => void
+  toggleSidebar: () => void
 }
 
 export function renderToolbar(host: HTMLElement, state: AppState, hooks: ToolbarHooks): void {
@@ -33,7 +35,19 @@ export function renderToolbar(host: HTMLElement, state: AppState, hooks: Toolbar
   ;(undoBtn as HTMLButtonElement).disabled = !canUndo()
   ;(redoBtn as HTMLButtonElement).disabled = !canRedo()
 
+  const collapsed = isSidebarCollapsed()
+
   host.append(
+    h(
+      'button.icon.desktop-only',
+      {
+        title: collapsed ? '展開側邊欄' : '收合側邊欄',
+        'aria-expanded': String(!collapsed),
+        'aria-controls': 'panel',
+        onclick: hooks.toggleSidebar,
+      },
+      icon(collapsed ? 'chevronRight' : 'chevronLeft'),
+    ),
     h('span.title', {}, 'trailkit'),
     h('button.primary', { onclick: () => input.click() }, '開啟檔案'),
     input,
