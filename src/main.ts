@@ -8,15 +8,16 @@ import { loadFiles } from './io/loadFile'
 import { applyBasemap, createMap, fitTo, setTerrain } from './map/mapView'
 import { syncOverlayLayers } from './map/overlayLayers'
 import { PEAK_LAYERS, ensurePeaks } from './map/peaks'
-import { closeWaypointPopup, showPeakPopup, showWaypointPopup } from './map/waypointPopup'
+import { closeWaypointPopup, showPeakPopup, showPointPopup, showWaypointPopup } from './map/waypointPopup'
+import { distanceAlong, elevationOf, nearestPointOnTrack, terrainElevation } from './map/elevation'
 import { syncTileLayers } from './map/tileLayers'
 import { syncCornerLayer, syncTrackLayers, syncVertexLayer, visiblePositions } from './map/trackLayers'
-import { bounds } from './model/stats'
+import { bounds, formatDistance, formatTime } from './model/stats'
 import { checkpoint, onHistoryChange, redo, undo } from './model/history'
 import { loadLayerPreferences, saveLayerPreferences } from './model/persist'
 import { loadSession, saveSession } from './model/session'
 import { addDocs, addLayers, getState, setSelection, subscribe } from './model/store'
-import { selectionKey, type AppState, type Selection } from './model/types'
+import { findTrack, findWaypoint, selectionKey, type AppState, type Selection } from './model/types'
 import { installCameraTool } from './edit/cameraTool'
 import { installVertexTool } from './edit/vertexTool'
 import { openExportDialog } from './ui/exportDialog'
@@ -220,7 +221,7 @@ function render(state: AppState): void {
   scheduleMapSync(state)
 }
 
-function selectFromMap(features: maplibregl.MapGeoJSONFeature[], at?: maplibregl.LngLatLike): void {
+function selectFromMap(features: maplibregl.MapGeoJSONFeature[], at?: maplibregl.LngLat): void {
   const key = features[0]?.properties?.['key']
   if (typeof key !== 'string') return
   const [kind, docId, id] = key.split(':')
@@ -231,6 +232,65 @@ function selectFromMap(features: maplibregl.MapGeoJSONFeature[], at?: maplibregl
 
   if (kind === 'waypoint' && at && map) showWaypointPopup(map, getState(), key, at)
   else closeWaypointPopup()
+}
+
+/**
+ * Right-click reads a height without disturbing the selection. Anything the
+ * file supplied a height for wins; bare ground falls back to the DEM.
+ */
+function elevationFromFile(
+  features: maplibregl.MapGeoJSONFeature[],
+  at: maplibregl.LngLat,
+): { elevation: number; detail?: string } | null {
+  const key = features[0]?.properties?.['key']
+  if (typeof key !== 'string') return null
+  const [kind, docId, id] = key.split(':')
+  if (!docId || !id) return null
+  const state = getState()
+
+  if (kind === 'waypoint') {
+    const wpt = findWaypoint(state, docId, id)
+    const ele = elevationOf(wpt?.geometry.coordinates)
+    return ele === null ? null : { elevation: ele, detail: wpt?.name }
+  }
+
+  if (kind !== 'track') return null
+  const track = findTrack(state, docId, id)
+  const point = track ? nearestPointOnTrack(track, at.lng, at.lat) : null
+  const ele = elevationOf(point?.position)
+  if (!track || !point || ele === null) return null
+
+  const parts = [`${track.name}　${formatDistance(distanceAlong(track, point.index))} 處`]
+  const time = track.props.times?.[point.index]
+  if (time) parts.push(formatTime(time))
+  return { elevation: ele, detail: parts.join('\n') }
+}
+
+/**
+ * The DEM fetch is async and the user may right-click again meanwhile, so only
+ * the newest request is allowed to open a popup.
+ */
+let elevationRequest = 0
+
+async function showElevationAt(
+  features: maplibregl.MapGeoJSONFeature[],
+  at: maplibregl.LngLat,
+): Promise<void> {
+  if (!map) return
+  const mine = ++elevationRequest
+
+  const fromFile = elevationFromFile(features, at)
+  if (fromFile) {
+    showPointPopup(map, at, { ...fromFile, source: 'file' })
+    return
+  }
+
+  // Coordinates need nothing but the click, so show them at once rather than
+  // making the user wait on a DEM tile that may never arrive.
+  showPointPopup(map, at, { elevation: null, source: 'terrain' })
+  const ele = await terrainElevation(at.lng, at.lat, map.getZoom())
+  if (ele === null || mine !== elevationRequest || !map) return
+  showPointPopup(map, at, { elevation: ele, source: 'terrain' })
 }
 
 async function restoreSession(): Promise<void> {
@@ -281,9 +341,14 @@ function start(): void {
    * by the layers you ask for, so a waypoint sitting on its own track would
    * otherwise be unselectable — and it is much the smaller target.
    */
+  // queryRenderedFeatures throws on a layer that does not exist, and the hit
+  // layers are only added once there is something to draw.
+  const query = (point: maplibregl.Point, layer: string) =>
+    map!.getLayer(layer) ? map!.queryRenderedFeatures(point, { layers: [layer] }) : []
+
   const hitTest = (point: maplibregl.Point) => {
-    const waypoints = map!.queryRenderedFeatures(point, { layers: ['waypoint-hit'] })
-    return waypoints.length ? waypoints : map!.queryRenderedFeatures(point, { layers: ['track-hit'] })
+    const waypoints = query(point, 'waypoint-hit')
+    return waypoints.length ? waypoints : query(point, 'track-hit')
   }
 
   map.on('click', (e) => {
@@ -306,10 +371,18 @@ function start(): void {
 
     setSelection(null)
     // Peaks are reference data, not something to select — just name them.
-    const peak = map!.queryRenderedFeatures(e.point, { layers: ['peak-hit'] })[0]
+    const peak = query(e.point, 'peak-hit')[0]
     if (peak && getState().showPeaks) showPeakPopup(map!, peak, e.lngLat)
     else closeWaypointPopup()
   })
+  // Right-click asks "how high is this?" without touching the selection.
+  // MapLibre raises contextmenu for a touch long-press too, so this works on
+  // mobile as well; the browser's own menu would otherwise cover the popup.
+  map.getCanvasContainer().addEventListener('contextmenu', (e) => e.preventDefault())
+  map.on('contextmenu', (e) => {
+    void showElevationAt(hitTest(e.point), e.lngLat)
+  })
+
   for (const layer of ['waypoint-hit', 'track-hit']) {
     map.on('mouseenter', layer, () => (map!.getCanvas().style.cursor = 'pointer'))
     map.on('mouseleave', layer, () => (map!.getCanvas().style.cursor = ''))
